@@ -9,6 +9,5 @@ export default registerAs('redis', () => ({
   maxRetriesPerRequest: 3,
   retryDelayOnFailover: 100,
   enableReadyCheck: true,
-  maxRetriesPerRequest: 3,
   lazyConnect: true,
 }));

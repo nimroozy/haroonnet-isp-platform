@@ -324,71 +324,75 @@ def send_coa_disconnect(username: str):
     """Send CoA Disconnect-Request to terminate user session"""
     logger.info(f"Sending CoA disconnect for user: {username}")
 
+    app_db = None
+    radius_db = None
+    
     try:
         # Get NAS information for the user
         app_db = next(get_app_db())
         radius_db = next(get_radius_db())
 
-        try:
-            # Find active session
-            session_query = """
-            SELECT nasipaddress, acctsessionid, framedipaddress
-            FROM radacct
-            WHERE username = %s
-            AND acctstoptime IS NULL
-            ORDER BY acctstarttime DESC
-            LIMIT 1
-            """
+        # Find active session
+        session_query = """
+        SELECT nasipaddress, acctsessionid, framedipaddress
+        FROM radacct
+        WHERE username = %s
+        AND acctstoptime IS NULL
+        ORDER BY acctstarttime DESC
+        LIMIT 1
+        """
 
-            result = radius_db.execute(session_query, (username,))
-            session = result.fetchone()
+        result = radius_db.execute(session_query, (username,))
+        session = result.fetchone()
 
-            if not session:
-                logger.warning(f"No active session found for user: {username}")
-                return {'status': 'no_session', 'username': username}
+        if not session:
+            logger.warning(f"No active session found for user: {username}")
+            return {'status': 'no_session', 'username': username}
 
-            # Get NAS secret
-            nas_query = """
-            SELECT secret FROM nas WHERE nasname = %s
-            """
-            result = radius_db.execute(nas_query, (session.nasipaddress,))
-            nas = result.fetchone()
+        # Get NAS secret
+        nas_query = """
+        SELECT secret FROM nas WHERE nasname = %s
+        """
+        result = radius_db.execute(nas_query, (session.nasipaddress,))
+        nas = result.fetchone()
 
-            if not nas:
-                logger.error(f"NAS not found: {session.nasipaddress}")
-                return {'status': 'nas_not_found', 'nas_ip': session.nasipaddress}
+        if not nas:
+            logger.error(f"NAS not found: {session.nasipaddress}")
+            return {'status': 'nas_not_found', 'nas_ip': session.nasipaddress}
 
-            # Create RADIUS client
-            client = Client(
-                server=session.nasipaddress,
-                secret=nas.secret.encode(),
-                dict=Dictionary("dictionary")
-            )
+        # Create RADIUS client
+        client = Client(
+            server=session.nasipaddress,
+            secret=nas.secret.encode(),
+            dict=Dictionary("dictionary")
+        )
 
-            # Create Disconnect-Request packet
-            req = client.CreateCoAPacket(code=packet.DisconnectRequest)
-            req["User-Name"] = username
-            req["Acct-Session-Id"] = session.acctsessionid
-            if session.framedipaddress:
-                req["Framed-IP-Address"] = session.framedipaddress
+        # Create Disconnect-Request packet
+        req = client.CreateCoAPacket(code=packet.DisconnectRequest)
+        req["User-Name"] = username
+        req["Acct-Session-Id"] = session.acctsessionid
+        if session.framedipaddress:
+            req["Framed-IP-Address"] = session.framedipaddress
 
-            # Send CoA request
-            reply = client.SendPacket(req)
+        # Send CoA request
+        reply = client.SendPacket(req)
 
-            if reply.code == packet.DisconnectACK:
-                logger.info(f"CoA disconnect successful for user: {username}")
-                return {'status': 'success', 'username': username}
-            else:
-                logger.error(f"CoA disconnect failed for user: {username}")
-                return {'status': 'failed', 'username': username}
-
-        finally:
-            app_db.close()
-            radius_db.close()
+        if reply.code == packet.DisconnectACK:
+            logger.info(f"CoA disconnect successful for user: {username}")
+            return {'status': 'success', 'username': username}
+        else:
+            logger.error(f"CoA disconnect failed for user: {username}")
+            return {'status': 'failed', 'username': username}
 
     except Exception as e:
         logger.error(f"CoA disconnect error for user {username}: {str(e)}")
         return {'status': 'error', 'username': username, 'error': str(e)}
+    finally:
+        # Ensure database connections are always closed
+        if app_db:
+            app_db.close()
+        if radius_db:
+            radius_db.close()
 
 
 @celery.task
@@ -396,67 +400,71 @@ def send_coa_rate_limit(username: str, rate_limit: str):
     """Send CoA request to change user's rate limit"""
     logger.info(f"Sending CoA rate limit change for user: {username} to {rate_limit}")
 
+    app_db = None
+    radius_db = None
+    
     try:
         # Get NAS information for the user
         app_db = next(get_app_db())
         radius_db = next(get_radius_db())
 
-        try:
-            # Find active session
-            session_query = """
-            SELECT nasipaddress, acctsessionid, framedipaddress
-            FROM radacct
-            WHERE username = %s
-            AND acctstoptime IS NULL
-            ORDER BY acctstarttime DESC
-            LIMIT 1
-            """
+        # Find active session
+        session_query = """
+        SELECT nasipaddress, acctsessionid, framedipaddress
+        FROM radacct
+        WHERE username = %s
+        AND acctstoptime IS NULL
+        ORDER BY acctstarttime DESC
+        LIMIT 1
+        """
 
-            result = radius_db.execute(session_query, (username,))
-            session = result.fetchone()
+        result = radius_db.execute(session_query, (username,))
+        session = result.fetchone()
 
-            if not session:
-                logger.warning(f"No active session found for user: {username}")
-                return {'status': 'no_session', 'username': username}
+        if not session:
+            logger.warning(f"No active session found for user: {username}")
+            return {'status': 'no_session', 'username': username}
 
-            # Get NAS secret
-            nas_query = """
-            SELECT secret FROM nas WHERE nasname = %s
-            """
-            result = radius_db.execute(nas_query, (session.nasipaddress,))
-            nas = result.fetchone()
+        # Get NAS secret
+        nas_query = """
+        SELECT secret FROM nas WHERE nasname = %s
+        """
+        result = radius_db.execute(nas_query, (session.nasipaddress,))
+        nas = result.fetchone()
 
-            if not nas:
-                logger.error(f"NAS not found: {session.nasipaddress}")
-                return {'status': 'nas_not_found', 'nas_ip': session.nasipaddress}
+        if not nas:
+            logger.error(f"NAS not found: {session.nasipaddress}")
+            return {'status': 'nas_not_found', 'nas_ip': session.nasipaddress}
 
-            # Create RADIUS client
-            client = Client(
-                server=session.nasipaddress,
-                secret=nas.secret.encode(),
-                dict=Dictionary("dictionary")
-            )
+        # Create RADIUS client
+        client = Client(
+            server=session.nasipaddress,
+            secret=nas.secret.encode(),
+            dict=Dictionary("dictionary")
+        )
 
-            # Create CoA-Request packet
-            req = client.CreateCoAPacket(code=packet.CoARequest)
-            req["User-Name"] = username
-            req["Acct-Session-Id"] = session.acctsessionid
-            req["Mikrotik-Rate-Limit"] = rate_limit
+        # Create CoA-Request packet
+        req = client.CreateCoAPacket(code=packet.CoARequest)
+        req["User-Name"] = username
+        req["Acct-Session-Id"] = session.acctsessionid
+        req["Mikrotik-Rate-Limit"] = rate_limit
 
-            # Send CoA request
-            reply = client.SendPacket(req)
+        # Send CoA request
+        reply = client.SendPacket(req)
 
-            if reply.code == packet.CoAACK:
-                logger.info(f"CoA rate limit change successful for user: {username}")
-                return {'status': 'success', 'username': username, 'rate_limit': rate_limit}
-            else:
-                logger.error(f"CoA rate limit change failed for user: {username}")
-                return {'status': 'failed', 'username': username}
-
-        finally:
-            app_db.close()
-            radius_db.close()
+        if reply.code == packet.CoAACK:
+            logger.info(f"CoA rate limit change successful for user: {username}")
+            return {'status': 'success', 'username': username, 'rate_limit': rate_limit}
+        else:
+            logger.error(f"CoA rate limit change failed for user: {username}")
+            return {'status': 'failed', 'username': username}
 
     except Exception as e:
         logger.error(f"CoA rate limit error for user {username}: {str(e)}")
         return {'status': 'error', 'username': username, 'error': str(e)}
+    finally:
+        # Ensure database connections are always closed
+        if app_db:
+            app_db.close()
+        if radius_db:
+            radius_db.close()

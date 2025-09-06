@@ -19,14 +19,14 @@ class Settings(BaseSettings):
     DB_PORT: int = 3306
     DB_NAME: str = "haroonnet"
     DB_USER: str = "haroonnet"
-    DB_PASSWORD: str = "haroonnet123"
+    DB_PASSWORD: str = "dev-only-weak-password"
 
     # RADIUS Database configuration
     RADIUS_DB_HOST: str = "mysql"
     RADIUS_DB_PORT: int = 3306
     RADIUS_DB_NAME: str = "radius"
     RADIUS_DB_USER: str = "radius"
-    RADIUS_DB_PASSWORD: str = "radpass"
+    RADIUS_DB_PASSWORD: str = "dev-only-weak-password"
 
     # Redis configuration
     REDIS_HOST: str = "redis"
@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     DEFAULT_CURRENCY: str = "AFN"
 
     # RADIUS CoA configuration
-    COA_SECRET: str = "haroonnet-coa-secret-2024"
+    COA_SECRET: str = "dev-only-weak-coa-secret"
     COA_PORT: int = 3799
 
     # Backup configuration
@@ -102,6 +102,41 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        
+        # Validate production settings
+        if os.getenv('ENVIRONMENT') == 'production' or os.getenv('NODE_ENV') == 'production':
+            self._validate_production_config()
+
+    def _validate_production_config(self):
+        """Validate configuration for production environment"""
+        errors = []
+        
+        # Check database passwords
+        if self.DB_PASSWORD == "dev-only-weak-password":
+            errors.append("DB_PASSWORD must be set to a strong password in production")
+        elif len(self.DB_PASSWORD) < 12:
+            errors.append("DB_PASSWORD must be at least 12 characters long in production")
+            
+        if self.RADIUS_DB_PASSWORD == "dev-only-weak-password":
+            errors.append("RADIUS_DB_PASSWORD must be set to a strong password in production")
+        elif len(self.RADIUS_DB_PASSWORD) < 12:
+            errors.append("RADIUS_DB_PASSWORD must be at least 12 characters long in production")
+            
+        # Check CoA secret
+        if self.COA_SECRET == "dev-only-weak-coa-secret":
+            errors.append("COA_SECRET must be set to a strong secret in production")
+        elif len(self.COA_SECRET) < 32:
+            errors.append("COA_SECRET must be at least 32 characters long in production")
+            
+        # Check required external service configurations
+        if not self.SMTP_USER or not self.SMTP_PASSWORD:
+            errors.append("SMTP credentials must be configured in production")
+            
+        if errors:
+            raise ValueError(f"Production configuration errors: {'; '.join(errors)}")
 
 
 # Global settings instance
