@@ -16,7 +16,6 @@ export class AppService {
       host: this.configService.get('redis.host'),
       port: this.configService.get('redis.port'),
       password: this.configService.get('redis.password'),
-      retryDelayOnFailover: 100,
       maxRetriesPerRequest: 3,
     });
   }
