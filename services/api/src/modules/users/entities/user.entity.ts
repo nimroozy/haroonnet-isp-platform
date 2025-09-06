@@ -71,9 +71,16 @@ export class User {
 
   // Password hashing
   @BeforeInsert()
-  @BeforeUpdate()
-  async hashPassword() {
+  async hashPasswordOnInsert() {
     if (this.password) {
+      this.password = await bcrypt.hash(this.password, 12);
+    }
+  }
+
+  @BeforeUpdate()
+  async hashPasswordOnUpdate() {
+    // Only hash if password is being changed (not already hashed)
+    if (this.password && !this.password.startsWith('$2b$')) {
       this.password = await bcrypt.hash(this.password, 12);
     }
   }

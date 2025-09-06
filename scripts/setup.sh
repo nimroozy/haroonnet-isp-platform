@@ -123,12 +123,17 @@ echo "🌐 Access URLs:"
 echo "   Admin Portal:    https://localhost:3000"
 echo "   Customer Portal: https://localhost:3001"
 echo "   API Docs:        https://localhost:4000/api/docs"
-echo "   Grafana:         https://localhost:3002 (admin/admin123)"
+echo "   Grafana:         https://localhost:3002"
 echo "   Prometheus:      https://localhost:9090"
 echo ""
-echo "🔑 Default Credentials:"
+echo "🔑 Generated Credentials (SAVE THESE!):"
+# Generate secure random password if not already set
+if [ -z "$ADMIN_PASSWORD" ]; then
+    ADMIN_PASSWORD=$(openssl rand -base64 12)
+    echo "ADMIN_PASSWORD=$ADMIN_PASSWORD" >> .env
+fi
 echo "   Admin User:      admin@haroonnet.com"
-echo "   Password:        admin123"
+echo "   Password:        $ADMIN_PASSWORD"
 echo ""
 echo "📋 Next Steps:"
 echo "   1. Change default passwords"

@@ -183,15 +183,16 @@ def generate_monthly_invoices(self, db: Session):
         now = datetime.now()
         prefix = f"INV-{now.year}{now.month:02d}-"
 
-        # Get next sequence number
+        # Get next sequence number using safe parameterized query
         query = """
-        SELECT COUNT(*) + 1 as next_num
+        SELECT COUNT(*) as count
         FROM invoices
-        WHERE invoice_number LIKE %s
+        WHERE invoice_number LIKE CONCAT(%s, '%%')
         """
 
-        result = db.execute(query, (f"{prefix}%",))
-        next_num = result.fetchone().next_num
+        result = db.execute(query, (prefix,))
+        count = result.fetchone().count
+        next_num = count + 1
 
         return f"{prefix}{next_num:04d}"
 
@@ -433,14 +434,16 @@ def process_payment(self, db: Session, payment_data: dict):
         now = datetime.now()
         prefix = f"PAY-{now.year}{now.month:02d}-"
 
+        # Get next sequence number using safe parameterized query
         query = """
-        SELECT COUNT(*) + 1 as next_num
+        SELECT COUNT(*) as count
         FROM payments
-        WHERE payment_number LIKE %s
+        WHERE payment_number LIKE CONCAT(%s, '%%')
         """
 
-        result = db.execute(query, (f"{prefix}%",))
-        next_num = result.fetchone().next_num
+        result = db.execute(query, (prefix,))
+        count = result.fetchone().count
+        next_num = count + 1
 
         return f"{prefix}{next_num:04d}"
 
