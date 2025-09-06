@@ -27,7 +27,7 @@ class DatabaseTask(Task):
             db.close()
 
     def run_with_db(self, db: Session, *args, **kwargs):
-        return self.run(*args, **kwargs)
+        return self.run(db, *args, **kwargs)
 
 
 @celery.task(bind=True, base=DatabaseTask)

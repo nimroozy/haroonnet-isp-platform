@@ -73,9 +73,18 @@ export class User {
   @BeforeInsert()
   @BeforeUpdate()
   async hashPassword() {
-    if (this.password) {
-      this.password = await bcrypt.hash(this.password, 12);
+    if (!this.password) {
+      return;
     }
+
+    // Avoid double-hashing if the password already looks like a bcrypt hash
+    const bcryptPattern = /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/;
+    const isAlreadyHashed = bcryptPattern.test(this.password);
+    if (isAlreadyHashed) {
+      return;
+    }
+
+    this.password = await bcrypt.hash(this.password, 12);
   }
 
   async validatePassword(password: string): Promise<boolean> {
