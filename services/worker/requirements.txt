@@ -31,7 +31,7 @@ stripe==7.8.0
 pyrad==2.4
 
 # Logging
-structlog==23.2.0
+structlog==24.5.0
 
 # Testing
 pytest==7.4.3

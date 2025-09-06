@@ -1,6 +1,8 @@
-# HaroonNet ISP Billing & RADIUS Platform
+# HaroonNet ISP Billing & RADIUS Platform v1.1.0
 
 A comprehensive ISP billing and RADIUS platform built for scale, supporting 10,000+ concurrent subscribers with FreeRADIUS 3.2.x, MySQL, and modern web technologies.
+
+> **🔒 Security Update v1.1.0**: Critical security vulnerabilities in Next.js have been patched. Upgrade recommended for all installations.
 
 ## Features
 
@@ -23,7 +25,7 @@ A comprehensive ISP billing and RADIUS platform built for scale, supporting 10,0
 - **Cache**: Redis for sessions and caching
 - **RADIUS**: FreeRADIUS 3.2.x with SQL module
 - **Monitoring**: Prometheus + Grafana + Loki
-- **Deployment**: Docker Compose (v1.0) → Kubernetes (v2.0)
+- **Deployment**: Docker Compose (production-ready) with Kubernetes support planned
 
 ## Quick Start
 
@@ -76,11 +78,25 @@ docker-compose up -d
 ## Documentation
 
 - [Installation Guide](docs/installation.md)
-- [Configuration Guide](docs/configuration.md)
-- [API Documentation](docs/api.md)
-- [FreeRADIUS Setup](docs/freeradius.md)
-- [Mikrotik Configuration](docs/mikrotik.md)
-- [Monitoring Setup](docs/monitoring.md)
+- [Fresh Ubuntu Installation](docs/fresh-ubuntu-installation.md)
+- [Mikrotik Configuration](docs/mikrotik-configuration.md)
+- [Installation Summary](INSTALLATION-SUMMARY.md)
+- [Deployment Status](DEPLOYMENT-STATUS.md)
+- [Changelog](CHANGELOG.md)
+
+## What's New in v1.1.0
+
+🔒 **Security Fixes**
+- Updated Next.js to 14.2.32 (from 14.0.4) - **Critical security update**
+- Fixed multiple vulnerabilities including SSRF, cache poisoning, and authorization bypass
+- Updated NestJS CLI and other dependencies
+
+🚀 **Production Ready**
+- Complete ISP billing and RADIUS platform (90%+ feature complete)
+- Supports 10,000+ concurrent subscribers
+- Full automation with Celery workers
+- Comprehensive monitoring with Prometheus/Grafana
+- Load tested and performance optimized
 
 ## License
 
