@@ -1,0 +1,208 @@
+######################################################################
+#
+# HaroonNet ISP Platform - CoA (Change of Authorization) Configuration
+# Enables dynamic session management and bandwidth control
+#
+######################################################################
+
+server coa {
+
+######################################################################
+# CoA Listener - Port 3799
+######################################################################
+listen {
+	type = coa
+	ipaddr = *
+	port = 3799
+
+	# Optimized for CoA traffic
+	recv_buff = 65536
+
+	limit {
+		max_connections = 16
+		lifetime = 86400
+		idle_timeout = 300
+	}
+}
+
+######################################################################
+# CoA Receive Section
+######################################################################
+recv-coa {
+	# Filter and preprocess CoA requests
+	filter_username
+	preprocess
+
+	# Operator name
+	operator-name
+
+	# Suffix/realm processing
+	suffix
+	ntdomain
+
+	# Look up user in SQL database
+	sql
+
+	# Verify the session exists and is active
+	if (!&SQL-Group) {
+		# User not found in database
+		update reply {
+			&Error-Cause := "Invalid-User"
+		}
+		reject
+	}
+
+	# Check if session is active in radacct table
+	if ("%{sql:SELECT COUNT(*) FROM radacct WHERE username='%{User-Name}' AND acctstoptime IS NULL}") {
+		# Session is active, allow CoA
+		ok
+	}
+	else {
+		# Session not active
+		update reply {
+			&Error-Cause := "Session-Not-Found"
+		}
+		reject
+	}
+}
+
+######################################################################
+# Send CoA Section
+######################################################################
+send-coa {
+	# Pre-process outgoing CoA requests
+	preprocess
+
+	# Add any required attributes
+	if (&request:Packet-Type == CoA-Request) {
+		# Ensure we have required identification attributes
+		if (!&User-Name && !&Acct-Session-Id && !&NAS-IP-Address) {
+			update reply {
+				&Error-Cause := "Missing-Attribute"
+			}
+			reject
+		}
+	}
+
+	# For Disconnect requests
+	elsif (&request:Packet-Type == Disconnect-Request) {
+		# Ensure we have required identification attributes
+		if (!&User-Name && !&Acct-Session-Id) {
+			update reply {
+				&Error-Cause := "Missing-Attribute"
+			}
+			reject
+		}
+	}
+}
+
+######################################################################
+# CoA Processing Section
+######################################################################
+recv-coa {
+	# Handle different CoA request types
+	switch &request:Packet-Type {
+		case CoA-Request {
+			# Change of Authorization - modify session attributes
+
+			# Handle rate limit changes
+			if (&request:Mikrotik-Rate-Limit) {
+				update coa {
+					&Mikrotik-Rate-Limit := &request:Mikrotik-Rate-Limit
+				}
+
+				# Log the rate limit change
+				update control {
+					&Module-Success-Message := "Rate limit changed to %{request:Mikrotik-Rate-Limit}"
+				}
+			}
+
+			# Handle IP address changes
+			if (&request:Framed-IP-Address) {
+				update coa {
+					&Framed-IP-Address := &request:Framed-IP-Address
+				}
+			}
+
+			# Handle session timeout changes
+			if (&request:Session-Timeout) {
+				update coa {
+					&Session-Timeout := &request:Session-Timeout
+				}
+			}
+
+			# Handle idle timeout changes
+			if (&request:Idle-Timeout) {
+				update coa {
+					&Idle-Timeout := &request:Idle-Timeout
+				}
+			}
+
+			# Handle filter changes (for walled garden, etc.)
+			if (&request:Filter-Id) {
+				update coa {
+					&Filter-Id := &request:Filter-Id
+				}
+			}
+
+			# Handle Mikrotik address list changes
+			if (&request:Mikrotik-Address-List) {
+				update coa {
+					&Mikrotik-Address-List := &request:Mikrotik-Address-List
+				}
+			}
+
+			# Always return success for valid CoA requests
+			ok
+		}
+
+		case Disconnect-Request {
+			# Disconnect Message - terminate session
+
+			# Set terminate cause
+			update coa {
+				&Acct-Terminate-Cause := "Admin-Reset"
+			}
+
+			# Log the disconnection
+			update control {
+				&Module-Success-Message := "Session disconnected by admin"
+			}
+
+			ok
+		}
+
+		case {
+			# Unknown packet type
+			update reply {
+				&Error-Cause := "Unsupported-Service"
+			}
+			reject
+		}
+	}
+}
+
+######################################################################
+# Send CoA Section
+######################################################################
+send-coa {
+	# Nothing special needed for sending CoA
+	# The reply attributes are already set
+	ok
+}
+
+} # server coa
+
+######################################################################
+# CoA Client Configuration
+# Define which servers can send CoA requests to this server
+######################################################################
+
+# This would typically be in clients.conf, but included here for reference
+# client coa-server {
+#     ipaddr = 192.168.1.100
+#     secret = shared-secret-for-coa
+#     coa_server = yes
+#     require_message_authenticator = yes
+#     nas_type = other
+# }

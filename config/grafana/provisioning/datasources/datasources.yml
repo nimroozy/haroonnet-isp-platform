@@ -1,0 +1,73 @@
+# HaroonNet ISP Platform - Grafana Data Sources
+
+apiVersion: 1
+
+datasources:
+  # Prometheus - Primary metrics source
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      timeInterval: 15s
+      queryTimeout: 300s
+      httpMethod: POST
+    secureJsonData: {}
+
+  # Loki - Log aggregation
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    isDefault: false
+    editable: true
+    jsonData:
+      maxLines: 1000
+      timeout: 60s
+    secureJsonData: {}
+
+  # MySQL - Direct database access for custom queries
+  - name: MySQL-App
+    type: mysql
+    access: proxy
+    url: mysql:3306
+    database: haroonnet
+    user: haroonnet
+    isDefault: false
+    editable: true
+    jsonData:
+      maxOpenConns: 5
+      maxIdleConns: 2
+      connMaxLifetime: 14400
+    secureJsonData:
+      password: haroonnet123
+
+  # MySQL RADIUS Database
+  - name: MySQL-RADIUS
+    type: mysql
+    access: proxy
+    url: mysql:3306
+    database: radius
+    user: radius
+    isDefault: false
+    editable: true
+    jsonData:
+      maxOpenConns: 5
+      maxIdleConns: 2
+      connMaxLifetime: 14400
+    secureJsonData:
+      password: radpass
+
+  # Redis (if Redis datasource plugin is installed)
+  # - name: Redis
+  #   type: redis-datasource
+  #   access: proxy
+  #   url: redis://redis:6379
+  #   isDefault: false
+  #   editable: true
+  #   jsonData:
+  #     database: 0
+  #   secureJsonData:
+  #     password: ""

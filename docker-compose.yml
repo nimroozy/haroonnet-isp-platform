@@ -1,0 +1,320 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: haroonnet-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-haroonnet123}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-haroonnet}
+      MYSQL_USER: ${MYSQL_USER:-haroonnet}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-haroonnet123}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/mysql:/docker-entrypoint-initdb.d
+      - ./config/mysql/my.cnf:/etc/mysql/conf.d/custom.cnf
+    networks:
+      - haroonnet
+    command: --default-authentication-plugin=mysql_native_password
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: haroonnet-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./config/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - haroonnet
+
+  # FreeRADIUS Server
+  freeradius:
+    build:
+      context: ./services/freeradius
+      dockerfile: Dockerfile
+    container_name: haroonnet-freeradius
+    restart: unless-stopped
+    ports:
+      - "1812:1812/udp"  # Authentication
+      - "1813:1813/udp"  # Accounting
+      - "3799:3799/udp"  # CoA/DM
+    volumes:
+      - ./config/freeradius:/etc/freeradius/3.0
+      - freeradius_logs:/var/log/freeradius
+    environment:
+      - DB_HOST=mysql
+      - DB_NAME=${RADIUS_DB_NAME:-radius}
+      - DB_USER=${RADIUS_DB_USER:-radius}
+      - DB_PASSWORD=${RADIUS_DB_PASSWORD:-radpass}
+    depends_on:
+      - mysql
+    networks:
+      - haroonnet
+
+  # API Server (NestJS)
+  api:
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+    container_name: haroonnet-api
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=${MYSQL_DATABASE:-haroonnet}
+      - DB_USER=${MYSQL_USER:-haroonnet}
+      - DB_PASSWORD=${MYSQL_PASSWORD:-haroonnet123}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET:-haroonnet-jwt-secret-key}
+      - RADIUS_DB_HOST=mysql
+      - RADIUS_DB_NAME=${RADIUS_DB_NAME:-radius}
+      - RADIUS_DB_USER=${RADIUS_DB_USER:-radius}
+      - RADIUS_DB_PASSWORD=${RADIUS_DB_PASSWORD:-radpass}
+    volumes:
+      - ./services/api:/app
+      - /app/node_modules
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - haroonnet
+
+  # Admin Web UI (Next.js)
+  admin-ui:
+    build:
+      context: ./services/admin-ui
+      dockerfile: Dockerfile
+    container_name: haroonnet-admin-ui
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:4000
+      - NODE_ENV=${NODE_ENV:-development}
+    volumes:
+      - ./services/admin-ui:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - api
+    networks:
+      - haroonnet
+
+  # Customer Portal (Next.js)
+  customer-portal:
+    build:
+      context: ./services/customer-portal
+      dockerfile: Dockerfile
+    container_name: haroonnet-customer-portal
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:4000
+      - NODE_ENV=${NODE_ENV:-development}
+    volumes:
+      - ./services/customer-portal:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - api
+    networks:
+      - haroonnet
+
+  # Python Workers (Celery)
+  worker:
+    build:
+      context: ./services/worker
+      dockerfile: Dockerfile
+    container_name: haroonnet-worker
+    restart: unless-stopped
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=${MYSQL_DATABASE:-haroonnet}
+      - DB_USER=${MYSQL_USER:-haroonnet}
+      - DB_PASSWORD=${MYSQL_PASSWORD:-haroonnet123}
+      - RADIUS_DB_HOST=mysql
+      - RADIUS_DB_NAME=${RADIUS_DB_NAME:-radius}
+      - RADIUS_DB_USER=${RADIUS_DB_USER:-radius}
+      - RADIUS_DB_PASSWORD=${RADIUS_DB_PASSWORD:-radpass}
+      - COMPANY_NAME=${COMPANY_NAME:-HaroonNet ISP}
+      - COMPANY_EMAIL=${COMPANY_EMAIL:-admin@haroonnet.com}
+      - COMPANY_PHONE=${COMPANY_PHONE:-+93-123-456-789}
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_FROM_NUMBER=${TWILIO_FROM_NUMBER}
+    volumes:
+      - ./services/worker:/app
+      - worker_backups:/app/backups
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - haroonnet
+    command: ["celery", "-A", "app.celery", "worker", "--loglevel=info", "--concurrency=4"]
+
+  # Celery Beat Scheduler
+  scheduler:
+    build:
+      context: ./services/worker
+      dockerfile: Dockerfile
+    container_name: haroonnet-scheduler
+    restart: unless-stopped
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=${MYSQL_DATABASE:-haroonnet}
+      - DB_USER=${MYSQL_USER:-haroonnet}
+      - DB_PASSWORD=${MYSQL_PASSWORD:-haroonnet123}
+      - RADIUS_DB_HOST=mysql
+      - RADIUS_DB_NAME=${RADIUS_DB_NAME:-radius}
+      - RADIUS_DB_USER=${RADIUS_DB_USER:-radius}
+      - RADIUS_DB_PASSWORD=${RADIUS_DB_PASSWORD:-radpass}
+    volumes:
+      - ./services/worker:/app
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - haroonnet
+    command: ["celery", "-A", "app.celery", "beat", "--loglevel=info"]
+
+  # Celery Flower (Worker Monitoring)
+  flower:
+    build:
+      context: ./services/worker
+      dockerfile: Dockerfile
+    container_name: haroonnet-flower
+    restart: unless-stopped
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - redis
+    networks:
+      - haroonnet
+    command: ["celery", "-A", "app.celery", "flower", "--port=5555"]
+
+  # NGINX Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: haroonnet-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./config/nginx/conf.d:/etc/nginx/conf.d
+      - ./ssl:/etc/nginx/ssl
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - api
+      - admin-ui
+      - customer-portal
+    networks:
+      - haroonnet
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: haroonnet-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - haroonnet
+
+  # Grafana Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: haroonnet-grafana
+    restart: unless-stopped
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+    networks:
+      - haroonnet
+
+  # Loki Log Aggregation
+  loki:
+    image: grafana/loki:latest
+    container_name: haroonnet-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./config/loki/loki-config.yml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - haroonnet
+
+  # Promtail Log Shipper
+  promtail:
+    image: grafana/promtail:latest
+    container_name: haroonnet-promtail
+    restart: unless-stopped
+    volumes:
+      - ./config/promtail/promtail-config.yml:/etc/promtail/config.yml
+      - /var/log:/var/log:ro
+      - freeradius_logs:/var/log/freeradius:ro
+      - nginx_logs:/var/log/nginx:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    networks:
+      - haroonnet
+
+volumes:
+  mysql_data:
+  redis_data:
+  freeradius_logs:
+  nginx_logs:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  worker_backups:
+
+networks:
+  haroonnet:
+    driver: bridge

@@ -1,0 +1,134 @@
+# HaroonNet ISP Platform - Prometheus Configuration
+# Monitoring configuration for all platform services
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'haroonnet-isp'
+    environment: 'production'
+
+rule_files:
+  - "alert_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 15s
+    metrics_path: /metrics
+
+  # Node Exporter (system metrics)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+    metrics_path: /metrics
+
+  # MySQL Database
+  - job_name: 'mysql'
+    static_configs:
+      - targets: ['mysql-exporter:9104']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Redis
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Nginx
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx-exporter:9113']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # API Application
+  - job_name: 'haroonnet-api'
+    static_configs:
+      - targets: ['api:4000']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+  # Admin UI (if metrics enabled)
+  - job_name: 'admin-ui'
+    static_configs:
+      - targets: ['admin-ui:3000']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+  # Customer Portal (if metrics enabled)
+  - job_name: 'customer-portal'
+    static_configs:
+      - targets: ['customer-portal:3000']
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+
+  # Celery Worker Metrics
+  - job_name: 'celery-worker'
+    static_configs:
+      - targets: ['worker:8000']  # Assuming metrics endpoint
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # FreeRADIUS (if exporter available)
+  - job_name: 'freeradius'
+    static_configs:
+      - targets: ['freeradius-exporter:9812']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # Custom business metrics from API
+  - job_name: 'business-metrics'
+    static_configs:
+      - targets: ['api:4000']
+    scrape_interval: 60s
+    metrics_path: /api/v1/metrics/business
+    scrape_timeout: 30s
+
+  # Blackbox monitoring (external endpoints)
+  - job_name: 'blackbox-http'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+        - https://localhost/health
+        - https://localhost/admin/
+        - https://localhost/portal/
+        - https://localhost/api/v1/health
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # RADIUS server monitoring (custom)
+  - job_name: 'radius-monitoring'
+    static_configs:
+      - targets: ['api:4000']
+    scrape_interval: 60s
+    metrics_path: /api/v1/metrics/radius
+    scrape_timeout: 30s
+
+# Remote write configuration (for long-term storage)
+# remote_write:
+#   - url: "https://your-remote-storage-endpoint/api/v1/write"
+#     basic_auth:
+#       username: "your-username"
+#       password: "your-password"

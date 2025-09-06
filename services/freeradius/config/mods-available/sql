@@ -1,0 +1,138 @@
+# -*- text -*-
+##
+## HaroonNet ISP Platform - SQL Module Configuration
+## Optimized for MySQL with Mikrotik integration
+##
+
+sql {
+	# Database dialect
+	dialect = "mysql"
+
+	# MySQL driver
+	driver = "rlm_sql_mysql"
+
+	# MySQL connection settings
+	mysql {
+		# Connection info - will be updated by startup script
+		server = "mysql"
+		port = 3306
+		login = "radius"
+		password = "radpass"
+
+		# Connection pool settings for high performance
+		radius_db = "radius"
+
+		# TLS settings (disabled for internal Docker network)
+		tls {
+			tls_required = no
+		}
+
+		# MySQL specific settings
+		warnings = auto
+	}
+
+	# Database table configuration
+	radius_db = "radius"
+
+	# Table names (standard FreeRADIUS schema)
+	acct_table1 = "radacct"
+	acct_table2 = "radacct"
+	postauth_table = "radpostauth"
+	authcheck_table = "radcheck"
+	groupcheck_table = "radgroupcheck"
+	authreply_table = "radreply"
+	groupreply_table = "radgroupreply"
+	usergroup_table = "radusergroup"
+
+	# Enable reading groups and profiles
+	read_groups = yes
+	read_profiles = yes
+
+	# Delete stale sessions for better session management
+	delete_stale_sessions = yes
+
+	# Connection pool settings optimized for high load
+	pool {
+		start = 5
+		min = 4
+		max = 50
+		spare = 10
+		uses = 1000
+		lifetime = 3600
+		idle_timeout = 300
+		retry_delay = 1
+		cleanup_interval = 300
+	}
+
+	# Read radius clients from database
+	read_clients = yes
+	client_table = "nas"
+
+	# Group attribute for this SQL instance
+	group_attribute = "SQL-Group"
+
+	# Record query numbers for debugging
+	record_query_number = yes
+
+	# Safe characters for SQL queries
+	safe_characters = "@abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_: /"
+
+	# Include database-specific queries
+	$INCLUDE ${modconfdir}/${.:name}/main/${dialect}/queries.conf
+
+	# Accounting configuration
+	accounting {
+		# Reference for Accounting-On/Off packets
+		reference = "%{tolower:type.%{Acct-Status-Type}.query}"
+
+		# Interim updates - coalesce for better performance
+		type {
+			accounting-on {
+				query = "\
+					UPDATE ${....acct_table1} \
+					SET \
+						acctstoptime = FROM_UNIXTIME(%{integer:Event-Timestamp}), \
+						acctsessiontime = '%{integer:Event-Timestamp}' - \
+							UNIX_TIMESTAMP(acctstarttime), \
+						acctinputoctets = 0, \
+						acctoutputoctets = 0, \
+						acctterminatecause = '%{Acct-Terminate-Cause}' \
+					WHERE acctstoptime IS NULL \
+					AND nasipaddress = '%{NAS-IP-Address}' \
+					AND acctstarttime <= FROM_UNIXTIME(%{integer:Event-Timestamp})"
+			}
+
+			accounting-off {
+				query = "${..accounting-on.query}"
+			}
+
+			# Interim updates with coalescing for performance
+			interim-update {
+				query = "\
+					UPDATE ${....acct_table1} \
+					SET \
+						framedipaddress = '%{Framed-IP-Address}', \
+						acctupdatetime = FROM_UNIXTIME(%{integer:Event-Timestamp}), \
+						acctinputoctets = '%{%{Acct-Input-Gigawords}:-0}' << 32 | \
+							'%{%{Acct-Input-Octets}:-0}', \
+						acctoutputoctets = '%{%{Acct-Output-Gigawords}:-0}' << 32 | \
+							'%{%{Acct-Output-Octets}:-0}' \
+					WHERE AcctUniqueId = '%{Acct-Unique-Session-Id}'"
+			}
+		}
+	}
+
+	# Post-authentication logging
+	post-auth {
+		query = "\
+			INSERT INTO ${..postauth_table} \
+				(username, pass, reply, authdate, class) \
+			VALUES ( \
+				'%{SQL-User-Name}', \
+				'%{%{User-Password}:-%{Chap-Password}}', \
+				'%{reply:Packet-Type}', \
+				'%S', \
+				'%{reply:Class}' \
+			)"
+	}
+}

@@ -1,0 +1,222 @@
+# HaroonNet ISP Platform - Prometheus Alert Rules
+# Critical alerts for platform monitoring
+
+groups:
+  - name: system_alerts
+    rules:
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is above 80% for more than 5 minutes on {{ $labels.instance }}"
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: critical
+          service: system
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is above 90% for more than 5 minutes on {{ $labels.instance }}"
+
+      # High disk usage
+      - alert: HighDiskUsage
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High disk usage on {{ $labels.instance }}"
+          description: "Disk usage is above 85% on {{ $labels.instance }}"
+
+      # Service down
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: "{{ $labels.job }}"
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "Service {{ $labels.job }} on {{ $labels.instance }} has been down for more than 1 minute"
+
+  - name: database_alerts
+    rules:
+      # MySQL connection issues
+      - alert: MySQLDown
+        expr: mysql_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: mysql
+        annotations:
+          summary: "MySQL database is down"
+          description: "MySQL database connection is failing"
+
+      # High MySQL connections
+      - alert: MySQLHighConnections
+        expr: mysql_global_status_threads_connected / mysql_global_variables_max_connections * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: mysql
+        annotations:
+          summary: "MySQL connection usage is high"
+          description: "MySQL is using {{ $value }}% of available connections"
+
+      # MySQL slow queries
+      - alert: MySQLSlowQueries
+        expr: rate(mysql_global_status_slow_queries[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: mysql
+        annotations:
+          summary: "MySQL slow queries detected"
+          description: "MySQL slow query rate is {{ $value }} per second"
+
+      # Redis down
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: redis
+        annotations:
+          summary: "Redis is down"
+          description: "Redis connection is failing"
+
+  - name: application_alerts
+    rules:
+      # API response time
+      - alert: HighAPIResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="haroonnet-api"}[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "High API response time"
+          description: "95th percentile API response time is {{ $value }}s"
+
+      # API error rate
+      - alert: HighAPIErrorRate
+        expr: rate(http_requests_total{job="haroonnet-api",status=~"5.."}[5m]) / rate(http_requests_total{job="haroonnet-api"}[5m]) * 100 > 5
+        for: 5m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "High API error rate"
+          description: "API error rate is {{ $value }}%"
+
+      # Celery worker queue size
+      - alert: HighCeleryQueueSize
+        expr: celery_tasks_total{state="PENDING"} > 100
+        for: 10m
+        labels:
+          severity: warning
+          service: celery
+        annotations:
+          summary: "High Celery queue size"
+          description: "Celery has {{ $value }} pending tasks"
+
+      # Failed Celery tasks
+      - alert: CeleryTaskFailures
+        expr: rate(celery_tasks_total{state="FAILURE"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: celery
+        annotations:
+          summary: "Celery task failures detected"
+          description: "Celery task failure rate is {{ $value }} per second"
+
+  - name: business_alerts
+    rules:
+      # High authentication failure rate
+      - alert: HighAuthFailureRate
+        expr: rate(radius_auth_total{result="reject"}[5m]) / rate(radius_auth_total[5m]) * 100 > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: radius
+        annotations:
+          summary: "High RADIUS authentication failure rate"
+          description: "RADIUS authentication failure rate is {{ $value }}%"
+
+      # Low active sessions
+      - alert: LowActiveSessions
+        expr: radius_active_sessions < 10
+        for: 10m
+        labels:
+          severity: warning
+          service: business
+        annotations:
+          summary: "Low number of active sessions"
+          description: "Only {{ $value }} active RADIUS sessions"
+
+      # High overdue invoices
+      - alert: HighOverdueInvoices
+        expr: business_overdue_invoices_count > 50
+        for: 1h
+        labels:
+          severity: warning
+          service: billing
+        annotations:
+          summary: "High number of overdue invoices"
+          description: "{{ $value }} invoices are overdue"
+
+      # Revenue drop
+      - alert: RevenueDropAlert
+        expr: (business_daily_revenue - business_daily_revenue offset 1d) / business_daily_revenue offset 1d * 100 < -20
+        for: 1h
+        labels:
+          severity: warning
+          service: billing
+        annotations:
+          summary: "Daily revenue drop detected"
+          description: "Daily revenue has dropped by {{ $value }}% compared to yesterday"
+
+  - name: infrastructure_alerts
+    rules:
+      # Nginx high response time
+      - alert: NginxHighResponseTime
+        expr: histogram_quantile(0.95, rate(nginx_http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: nginx
+        annotations:
+          summary: "High Nginx response time"
+          description: "95th percentile Nginx response time is {{ $value }}s"
+
+      # Certificate expiration
+      - alert: SSLCertificateExpiringSoon
+        expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 30
+        for: 1h
+        labels:
+          severity: warning
+          service: ssl
+        annotations:
+          summary: "SSL certificate expiring soon"
+          description: "SSL certificate for {{ $labels.instance }} expires in {{ $value | humanizeDuration }}"
+
+      # Disk will be full soon
+      - alert: DiskWillBeFull
+        expr: predict_linear(node_filesystem_avail_bytes[1h], 4*3600) < 0
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "Disk will be full in 4 hours"
+          description: "Based on current usage, disk on {{ $labels.instance }} will be full in 4 hours"

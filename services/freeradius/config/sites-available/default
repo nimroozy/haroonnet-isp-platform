@@ -1,0 +1,291 @@
+######################################################################
+#
+# HaroonNet ISP Platform - Default Virtual Server Configuration
+# Optimized for PPPoE, Hotspot, and DHCP authentication with MySQL
+#
+######################################################################
+
+server default {
+
+# Authentication listener
+listen {
+	type = auth
+	ipaddr = *
+	port = 1812
+
+	# Optimized for high load
+	recv_buff = 65536
+
+	limit {
+		max_connections = 32
+		lifetime = 86400
+		idle_timeout = 300
+	}
+}
+
+# Accounting listener
+listen {
+	type = acct
+	ipaddr = *
+	port = 1813
+
+	# Optimized for high accounting load
+	recv_buff = 131072
+
+	limit {
+		max_connections = 32
+		lifetime = 86400
+		idle_timeout = 300
+	}
+}
+
+# Client configuration is read from database (nas table)
+
+######################################################################
+# Authorization Section
+######################################################################
+authorize {
+	# Filter attributes and add defaults
+	filter_username
+	preprocess
+
+	# Add Operator-Name if not present
+	operator-name
+
+	# Check for reject attributes first
+	attr_filter.access_reject
+
+	# Realm processing for proxy decisions
+	suffix
+	ntdomain
+
+	# EAP authentication (for WPA/WPA2)
+	eap {
+		ok = return
+		updated = return
+	}
+
+	# Read user/group information from SQL
+	sql
+
+	# Process group membership and check attributes
+	if (ok || updated) {
+		# User found in database, continue
+	}
+	else {
+		# User not found, reject
+		reject
+	}
+
+	# Check expiration and other policies
+	expiration
+	logintime
+
+	# Simultaneous use checking
+	sql {
+		ok = return
+		updated = return
+	}
+
+	# Add reply attributes from SQL
+	if (reply:Auth-Type) {
+		# Auth-Type already set, continue
+	}
+	else {
+		# Set Auth-Type based on password type
+		if (control:Cleartext-Password) {
+			update control {
+				Auth-Type := PAP
+			}
+		}
+		elsif (control:Crypt-Password) {
+			update control {
+				Auth-Type := Crypt-Local
+			}
+		}
+		elsif (control:MD5-Password) {
+			update control {
+				Auth-Type := MD5
+			}
+		}
+		elsif (control:SHA-Password) {
+			update control {
+				Auth-Type := SHA
+			}
+		}
+		elsif (control:NT-Password) {
+			update control {
+				Auth-Type := MS-CHAP
+			}
+		}
+	}
+}
+
+######################################################################
+# Authentication Section
+######################################################################
+authenticate {
+	# PAP authentication (most common for PPPoE)
+	Auth-Type PAP {
+		pap
+	}
+
+	# CHAP authentication
+	Auth-Type CHAP {
+		chap
+	}
+
+	# MS-CHAP authentication
+	Auth-Type MS-CHAP {
+		mschap
+	}
+
+	# Crypt-based authentication
+	Auth-Type Crypt-Local {
+		unix
+	}
+
+	# MD5 authentication
+	Auth-Type MD5 {
+		digest
+	}
+
+	# SHA authentication
+	Auth-Type SHA {
+		digest
+	}
+
+	# EAP authentication
+	eap
+
+	# Unix system authentication (fallback)
+	unix
+}
+
+######################################################################
+# Pre-Accounting Section
+######################################################################
+preacct {
+	# Ensure we have unique session IDs
+	preprocess
+	acct_unique
+
+	# Realm processing
+	suffix
+	ntdomain
+
+	# Read from SQL to get user info
+	sql
+}
+
+######################################################################
+# Accounting Section
+######################################################################
+accounting {
+	# Create unique session identifier
+	acct_unique
+
+	# Log to detail file for debugging (can be disabled in production)
+	detail
+
+	# Update SQL database with accounting information
+	sql
+
+	# Log authentication attempts
+	if (Acct-Status-Type == Start) {
+		# Session start - update online users
+		update reply {
+			&Acct-Interim-Interval := 300
+		}
+	}
+	elsif (Acct-Status-Type == Stop) {
+		# Session stop - clean up
+	}
+	elsif (Acct-Status-Type == Interim-Update) {
+		# Interim update - update usage statistics
+	}
+
+	# Update radutmp for who's online
+	radutmp
+
+	# Execute any CoA commands if needed
+	if (&control:Send-CoA-Request) {
+		# CoA will be sent automatically
+	}
+}
+
+######################################################################
+# Session Management Section
+######################################################################
+session {
+	# Use SQL for session tracking
+	sql
+}
+
+######################################################################
+# Post-Authentication Section
+######################################################################
+post-auth {
+	# Log successful authentications
+	sql
+
+	# Apply any post-auth policies
+	if (session-state:User-Name && reply:User-Name && (reply:User-Name == session-state:User-Name)) {
+		# Update last login time
+		update control {
+			&SQL-Last-Login := "%l"
+		}
+	}
+
+	# Remove sensitive information from reply
+	attr_filter.access_accept
+
+	# EAP post-auth
+	eap {
+		ok = return
+		updated = return
+	}
+
+	# Handle failed authentications
+	Post-Auth-Type REJECT {
+		# Log failed attempts
+		sql
+
+		# Add standard attributes
+		attr_filter.access_reject
+
+		# Remove sensitive information
+		remove_reply_message_if_eap
+	}
+
+	# Handle CoA requests
+	if (&request:Packet-Type == CoA-Request) {
+		# Process CoA attributes
+		if (&request:Mikrotik-Rate-Limit) {
+			update coa {
+				&Mikrotik-Rate-Limit := &request:Mikrotik-Rate-Limit
+			}
+		}
+	}
+}
+
+######################################################################
+# Pre-Proxy Section (if using proxy)
+######################################################################
+pre-proxy {
+	# Uncomment if using proxy
+	# attr_filter.pre-proxy
+}
+
+######################################################################
+# Post-Proxy Section (if using proxy)
+######################################################################
+post-proxy {
+	# Uncomment if using proxy
+	# attr_filter.post-proxy
+
+	# EAP post-proxy
+	eap
+}
+
+} # server default
