@@ -1,44 +1,44 @@
 # HaroonNet ISP Platform - Worker Service Dependencies
 
 # Core framework
-celery[redis]==5.3.4
-redis==5.0.1
+celery[redis]==5.4.0
+redis==5.2.1
 
 # Database
-SQLAlchemy==2.0.23
-PyMySQL==1.1.0
-cryptography==41.0.8
+SQLAlchemy==2.0.36
+PyMySQL==1.1.1
+cryptography==44.0.0
 
 # Configuration
-python-dotenv==1.0.0
-pydantic==2.5.0
-pydantic-settings==2.1.0
+python-dotenv==1.0.1
+pydantic==2.10.4
+pydantic-settings==2.7.1
 
 # Utilities
 requests==2.31.0
 python-dateutil==2.8.2
-pytz==2023.3
+pytz==2024.2
 
 # Notifications
-twilio==8.10.3
+twilio==9.5.2
 sendgrid==6.11.0
 jinja2==3.1.2
 
 # Billing & Payments
-stripe==7.8.0
+stripe==11.5.0
 
 # RADIUS CoA
 pyrad==2.4
 
 # Logging
-structlog==23.2.0
+structlog==24.6.0
 
 # Testing
-pytest==7.4.3
+pytest==8.3.4
 pytest-celery==0.0.0a1
-pytest-mock==3.12.0
+pytest-mock==3.14.0
 
 # Development
-black==23.11.0
-flake8==6.1.0
-mypy==1.7.1
+black==24.12.1
+flake8==7.1.1
+mypy==1.14.2

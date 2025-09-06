@@ -1,5 +1,7 @@
 # HaroonNet ISP Billing & RADIUS Platform
 
+**Version 1.1.0** - Released January 6, 2025
+
 A comprehensive ISP billing and RADIUS platform built for scale, supporting 10,000+ concurrent subscribers with FreeRADIUS 3.2.x, MySQL, and modern web technologies.
 
 ## Features
