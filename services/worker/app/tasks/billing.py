@@ -30,6 +30,142 @@ class DatabaseTask(Task):
         return self.run(*args, **kwargs)
 
 
+# ---------------------------------------------------------------------------
+# Helper functions (moved out of Celery task scope)
+# ---------------------------------------------------------------------------
+
+
+def _generate_invoice_number(db: Session) -> str:
+    """Generate a unique invoice number using the current year/month and a sequence."""
+    now = datetime.now()
+    prefix = f"INV-{now.year}{now.month:02d}-"
+
+    query = """
+    SELECT COUNT(*) + 1 as next_num
+    FROM invoices
+    WHERE invoice_number LIKE %s
+    """
+
+    result = db.execute(query, (f"{prefix}%",))
+    next_num = result.fetchone().next_num
+
+    return f"{prefix}{next_num:04d}"
+
+
+def _create_invoice(db: Session, subscription, billing_month, next_month):
+    """Create an invoice for a subscription and return the newly-created invoice ID."""
+    try:
+        invoice_number = _generate_invoice_number(db)
+
+        issue_date = datetime.now().date()
+        due_date = issue_date + timedelta(days=30)
+
+        invoice_query = """
+        INSERT INTO invoices (
+            invoice_number, customer_id, issue_date, due_date,
+            subtotal, tax_amount, total_amount, balance,
+            status, currency, created_at
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+
+        subtotal = float(subscription.monthly_fee)
+        tax_amount = subtotal * 0.0  # Configure tax rate as needed
+        total_amount = subtotal + tax_amount
+
+        result = db.execute(
+            invoice_query,
+            (
+                invoice_number,
+                subscription.customer_id,
+                issue_date,
+                due_date,
+                subtotal,
+                tax_amount,
+                total_amount,
+                total_amount,  # balance = total initially
+                'sent',
+                settings.DEFAULT_CURRENCY,
+                datetime.now(),
+            ),
+        )
+
+        invoice_id = result.lastrowid
+
+        # Create invoice item
+        item_query = """
+        INSERT INTO invoice_items (
+            invoice_id, subscription_id, description, quantity,
+            unit_price, line_total, period_start, period_end,
+            item_type, created_at
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+
+        db.execute(
+            item_query,
+            (
+                invoice_id,
+                subscription.id,
+                f"{subscription.plan_name} - Monthly Service",
+                1.0,
+                subtotal,
+                subtotal,
+                billing_month,
+                next_month - timedelta(days=1),
+                'subscription',
+                datetime.now(),
+            ),
+        )
+
+        return invoice_id
+
+    except Exception as e:
+        logger.error(f"Failed to create invoice: {str(e)}")
+        return None
+
+
+def _suspend_customer_services(db: Session, customer_id: int):
+    """Suspend all active subscriptions for a customer."""
+    try:
+        update_query = """
+        UPDATE subscriptions
+        SET status = 'suspended', suspension_date = CURDATE()
+        WHERE customer_id = %s AND status = 'active'
+        """
+        db.execute(update_query, (customer_id,))
+
+        # Retrieve suspended usernames for CoA disconnect
+        username_query = """
+        SELECT username FROM subscriptions
+        WHERE customer_id = %s AND status = 'suspended'
+        """
+        result = db.execute(username_query, (customer_id,))
+        usernames = [row.username for row in result.fetchall()]
+
+        from app.tasks.radius import send_coa_disconnect
+
+        for username in usernames:
+            send_coa_disconnect.delay(username)
+
+    except Exception as e:
+        logger.error(f"Failed to suspend customer {customer_id}: {str(e)}")
+        raise
+
+
+def _reactivate_customer_services(db: Session, customer_id: int):
+    """Reactivate suspended subscriptions for a customer once payment is complete."""
+    try:
+        update_query = """
+        UPDATE subscriptions
+        SET status = 'active', suspension_date = NULL
+        WHERE customer_id = %s AND status = 'suspended'
+        """
+        db.execute(update_query, (customer_id,))
+        logger.info(f"Reactivated services for customer {customer_id}")
+    except Exception as e:
+        logger.error(f"Failed to reactivate customer {customer_id}: {str(e)}")
+        raise
+
+
 @celery.task(bind=True, base=DatabaseTask)
 def generate_monthly_invoices(self, db: Session):
     """Generate monthly invoices for all active subscriptions"""
@@ -63,7 +199,7 @@ def generate_monthly_invoices(self, db: Session):
         for subscription in subscriptions:
             try:
                 # Generate invoice
-                invoice_id = self._create_invoice(db, subscription, billing_month, next_month)
+                invoice_id = _create_invoice(db, subscription, billing_month, next_month)
 
                 if invoice_id:
                     invoice_count += 1
@@ -110,91 +246,6 @@ def generate_monthly_invoices(self, db: Session):
         logger.error(f"Monthly invoice generation failed: {str(e)}")
         raise
 
-    def _create_invoice(self, db: Session, subscription, billing_month, next_month):
-        """Create invoice for a subscription"""
-        try:
-            # Generate invoice number
-            invoice_number = self._generate_invoice_number(db)
-
-            # Calculate dates
-            issue_date = datetime.now().date()
-            due_date = issue_date + timedelta(days=30)
-
-            # Create invoice
-            invoice_query = """
-            INSERT INTO invoices (
-                invoice_number, customer_id, issue_date, due_date,
-                subtotal, tax_amount, total_amount, balance,
-                status, currency, created_at
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """
-
-            subtotal = float(subscription.monthly_fee)
-            tax_amount = subtotal * 0.0  # Configure tax rate as needed
-            total_amount = subtotal + tax_amount
-
-            result = db.execute(invoice_query, (
-                invoice_number,
-                subscription.customer_id,
-                issue_date,
-                due_date,
-                subtotal,
-                tax_amount,
-                total_amount,
-                total_amount,  # balance = total initially
-                'sent',
-                settings.DEFAULT_CURRENCY,
-                datetime.now()
-            ))
-
-            invoice_id = result.lastrowid
-
-            # Create invoice item
-            item_query = """
-            INSERT INTO invoice_items (
-                invoice_id, subscription_id, description, quantity,
-                unit_price, line_total, period_start, period_end,
-                item_type, created_at
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """
-
-            db.execute(item_query, (
-                invoice_id,
-                subscription.id,
-                f"{subscription.plan_name} - Monthly Service",
-                1.0,
-                subtotal,
-                subtotal,
-                billing_month,
-                next_month - timedelta(days=1),
-                'subscription',
-                datetime.now()
-            ))
-
-            return invoice_id
-
-        except Exception as e:
-            logger.error(f"Failed to create invoice: {str(e)}")
-            return None
-
-    def _generate_invoice_number(self, db: Session):
-        """Generate unique invoice number"""
-        # Get current year and month
-        now = datetime.now()
-        prefix = f"INV-{now.year}{now.month:02d}-"
-
-        # Get next sequence number
-        query = """
-        SELECT COUNT(*) + 1 as next_num
-        FROM invoices
-        WHERE invoice_number LIKE %s
-        """
-
-        result = db.execute(query, (f"{prefix}%",))
-        next_num = result.fetchone().next_num
-
-        return f"{prefix}{next_num:04d}"
-
 
 @celery.task(bind=True, base=DatabaseTask)
 def process_overdue_accounts(self, db: Session):
@@ -228,7 +279,7 @@ def process_overdue_accounts(self, db: Session):
                 # Apply policies based on days overdue
                 if days_overdue >= settings.OVERDUE_GRACE_DAYS:
                     # Suspend services for this customer
-                    self._suspend_customer_services(db, invoice.customer_id)
+                    _suspend_customer_services(db, invoice.customer_id)
                     suspended_count += 1
 
                     # Send suspension notice
@@ -263,34 +314,6 @@ def process_overdue_accounts(self, db: Session):
         db.rollback()
         logger.error(f"Overdue account processing failed: {str(e)}")
         raise
-
-    def _suspend_customer_services(self, db: Session, customer_id: int):
-        """Suspend all services for a customer"""
-        try:
-            # Update subscription status
-            update_query = """
-            UPDATE subscriptions
-            SET status = 'suspended', suspension_date = CURDATE()
-            WHERE customer_id = %s AND status = 'active'
-            """
-            db.execute(update_query, (customer_id,))
-
-            # Get usernames for CoA
-            username_query = """
-            SELECT username FROM subscriptions
-            WHERE customer_id = %s AND status = 'suspended'
-            """
-            result = db.execute(username_query, (customer_id,))
-            usernames = [row.username for row in result.fetchall()]
-
-            # Send CoA disconnect for each username
-            from app.tasks.radius import send_coa_disconnect
-            for username in usernames:
-                send_coa_disconnect.delay(username)
-
-        except Exception as e:
-            logger.error(f"Failed to suspend customer {customer_id}: {str(e)}")
-            raise
 
 
 @celery.task(bind=True, base=DatabaseTask)
@@ -410,7 +433,7 @@ def process_payment(self, db: Session, payment_data: dict):
 
         # If fully paid, reactivate suspended services
         if new_status == 'paid':
-            self._reactivate_customer_services(db, invoice.customer_id)
+            _reactivate_customer_services(db, invoice.customer_id)
 
         db.commit()
 
@@ -443,20 +466,3 @@ def process_payment(self, db: Session, payment_data: dict):
         next_num = result.fetchone().next_num
 
         return f"{prefix}{next_num:04d}"
-
-    def _reactivate_customer_services(self, db: Session, customer_id: int):
-        """Reactivate suspended services for a customer"""
-        try:
-            # Update subscription status
-            update_query = """
-            UPDATE subscriptions
-            SET status = 'active', suspension_date = NULL
-            WHERE customer_id = %s AND status = 'suspended'
-            """
-            db.execute(update_query, (customer_id,))
-
-            logger.info(f"Reactivated services for customer {customer_id}")
-
-        except Exception as e:
-            logger.error(f"Failed to reactivate customer {customer_id}: {str(e)}")
-            raise

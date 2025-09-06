@@ -1,7 +1,9 @@
 import { registerAs } from '@nestjs/config';
 
 export default registerAs('auth', () => ({
-  jwtSecret: process.env.JWT_SECRET || 'haroonnet-jwt-secret-key',
+  // Do NOT fallback to a weak default secret in production.
+  // Force the JWT_SECRET environment variable to be set.
+  jwtSecret: process.env.JWT_SECRET ?? (() => { throw new Error('JWT_SECRET environment variable is required'); })(),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '24h',
   refreshTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
   bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS, 10) || 12,
