@@ -3,7 +3,7 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
-import * as compression from 'compression';
+import compression from 'compression';
 
 import { AppModule } from './app.module';
 
@@ -16,11 +16,25 @@ async function bootstrap() {
   app.use(helmet());
   app.use(compression());
 
-  // Enable CORS
-  app.enableCors({
-    origin: configService.get('CORS_ORIGINS', '*').split(','),
-    credentials: true,
-  });
+  // Enable CORS with safe defaults
+  const rawCorsOrigins = configService.get<string>('CORS_ORIGINS', '');
+  const parsedOrigins = rawCorsOrigins
+    .split(',')
+    .map((o) => o.trim())
+    .filter((o) => o.length > 0);
+  const allowAllOrigins = parsedOrigins.length === 0 || parsedOrigins.includes('*');
+
+  app.enableCors(
+    allowAllOrigins
+      ? {
+          origin: true, // reflect request origin
+          credentials: false, // cannot use credentials with wildcard
+        }
+      : {
+          origin: parsedOrigins,
+          credentials: true,
+        },
+  );
 
   // Global validation pipe
   app.useGlobalPipes(
