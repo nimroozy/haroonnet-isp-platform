@@ -115,15 +115,34 @@ else
     print_status "SUCCESS" "Docker Compose already installed"
 fi
 
-# Configure firewall for ISP services
-print_status "INFO" "Configuring professional ISP firewall..."
+# Disable IPv6 to prevent network issues
+print_status "INFO" "Disabling IPv6 to prevent network conflicts..."
 if [[ $EUID -eq 0 ]]; then
+    echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /etc/sysctl.conf
+    echo 'net.ipv6.conf.default.disable_ipv6 = 1' >> /etc/sysctl.conf
+    echo 'net.ipv6.conf.lo.disable_ipv6 = 1' >> /etc/sysctl.conf
+    sysctl -p
+else
+    echo 'net.ipv6.conf.all.disable_ipv6 = 1' | sudo tee -a /etc/sysctl.conf
+    echo 'net.ipv6.conf.default.disable_ipv6 = 1' | sudo tee -a /etc/sysctl.conf
+    echo 'net.ipv6.conf.lo.disable_ipv6 = 1' | sudo tee -a /etc/sysctl.conf
+    sudo sysctl -p
+fi
+print_status "SUCCESS" "IPv6 disabled successfully"
+
+# Configure firewall for ISP services (IPv4 only)
+print_status "INFO" "Configuring professional ISP firewall (IPv4 only)..."
+if [[ $EUID -eq 0 ]]; then
+    # Ensure SSH stays open before resetting firewall
+    ufw allow 22/tcp
+    sleep 2
+    
     ufw --force reset
     ufw default deny incoming
     ufw default allow outgoing
     
-    # Essential services
-    ufw allow ssh
+    # Essential services - allow from anywhere for initial setup
+    ufw allow 22/tcp   # SSH - CRITICAL
     ufw allow 80/tcp   # HTTP
     ufw allow 443/tcp  # HTTPS
     
@@ -140,14 +159,24 @@ if [[ $EUID -eq 0 ]]; then
     ufw allow 9090/tcp  # Prometheus Metrics
     ufw allow 5555/tcp  # Worker Monitoring
     
+    # Disable IPv6 in UFW
+    sed -i 's/IPV6=yes/IPV6=no/' /etc/default/ufw
+    
     ufw --force enable
+    
+    # Verify SSH is still allowed
+    ufw status | grep -q "22/tcp" && print_status "SUCCESS" "SSH access confirmed"
 else
+    # Ensure SSH stays open before resetting firewall
+    sudo ufw allow 22/tcp
+    sleep 2
+    
     sudo ufw --force reset
     sudo ufw default deny incoming
     sudo ufw default allow outgoing
     
-    # Essential services
-    sudo ufw allow ssh
+    # Essential services - allow from anywhere for initial setup
+    sudo ufw allow 22/tcp   # SSH - CRITICAL
     sudo ufw allow 80/tcp   # HTTP
     sudo ufw allow 443/tcp  # HTTPS
     
@@ -164,7 +193,13 @@ else
     sudo ufw allow 9090/tcp  # Prometheus Metrics
     sudo ufw allow 5555/tcp  # Worker Monitoring
     
+    # Disable IPv6 in UFW
+    sudo sed -i 's/IPV6=yes/IPV6=no/' /etc/default/ufw
+    
     sudo ufw --force enable
+    
+    # Verify SSH is still allowed
+    sudo ufw status | grep -q "22/tcp" && print_status "SUCCESS" "SSH access confirmed"
 fi
 print_status "SUCCESS" "Professional ISP firewall configured"
 
@@ -174,14 +209,14 @@ cd ~
 if [[ $EUID -eq 0 ]]; then
     rm -rf /opt/haroonnet
     rm -rf haroonnet-isp-platform
-    
+
     git clone https://github.com/nimroozy/haroonnet-isp-platform.git
     mv haroonnet-isp-platform /opt/haroonnet
     cd /opt/haroonnet
 else
     sudo rm -rf /opt/haroonnet
     rm -rf haroonnet-isp-platform
-    
+
     git clone https://github.com/nimroozy/haroonnet-isp-platform.git
     sudo mv haroonnet-isp-platform /opt/haroonnet
     sudo chown -R $USER:$USER /opt/haroonnet

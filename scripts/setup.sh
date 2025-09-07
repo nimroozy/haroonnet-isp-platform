@@ -76,30 +76,79 @@ else
     sudo apt install -y curl wget git htop tree jq ufw fail2ban
 fi
 
-# Configure firewall
-echo "🔒 Configuring firewall..."
+# Disable IPv6 to prevent network issues
+echo "🔒 Disabling IPv6 to prevent network conflicts..."
 if [[ $EUID -eq 0 ]]; then
+    echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /etc/sysctl.conf
+    echo 'net.ipv6.conf.default.disable_ipv6 = 1' >> /etc/sysctl.conf
+    echo 'net.ipv6.conf.lo.disable_ipv6 = 1' >> /etc/sysctl.conf
+    sysctl -p
+else
+    echo 'net.ipv6.conf.all.disable_ipv6 = 1' | sudo tee -a /etc/sysctl.conf
+    echo 'net.ipv6.conf.default.disable_ipv6 = 1' | sudo tee -a /etc/sysctl.conf
+    echo 'net.ipv6.conf.lo.disable_ipv6 = 1' | sudo tee -a /etc/sysctl.conf
+    sudo sysctl -p
+fi
+echo "✅ IPv6 disabled successfully"
+
+# Configure firewall (IPv4 only)
+echo "🔒 Configuring firewall (IPv4 only)..."
+if [[ $EUID -eq 0 ]]; then
+    # Ensure SSH stays open before resetting firewall
+    ufw allow 22/tcp
+    sleep 2
+    
     ufw --force reset
     ufw default deny incoming
     ufw default allow outgoing
-    ufw allow ssh
+    ufw allow 22/tcp   # SSH - CRITICAL
     ufw allow 80/tcp
     ufw allow 443/tcp
     ufw allow 1812/udp  # RADIUS Auth
     ufw allow 1813/udp  # RADIUS Accounting
     ufw allow 3799/udp  # CoA/DM
+    ufw allow 3000/tcp  # Admin Portal
+    ufw allow 3001/tcp  # Customer Portal
+    ufw allow 4000/tcp  # API Backend
+    ufw allow 3002/tcp  # Grafana
+    ufw allow 9090/tcp  # Prometheus
+    ufw allow 5555/tcp  # Flower
+    
+    # Disable IPv6 in UFW
+    sed -i 's/IPV6=yes/IPV6=no/' /etc/default/ufw
+    
     ufw --force enable
+    
+    # Verify SSH is still allowed
+    ufw status | grep -q "22/tcp" && echo "✅ SSH access confirmed"
 else
+    # Ensure SSH stays open before resetting firewall
+    sudo ufw allow 22/tcp
+    sleep 2
+    
     sudo ufw --force reset
     sudo ufw default deny incoming
     sudo ufw default allow outgoing
-    sudo ufw allow ssh
+    sudo ufw allow 22/tcp   # SSH - CRITICAL
     sudo ufw allow 80/tcp
     sudo ufw allow 443/tcp
     sudo ufw allow 1812/udp  # RADIUS Auth
     sudo ufw allow 1813/udp  # RADIUS Accounting
     sudo ufw allow 3799/udp  # CoA/DM
+    sudo ufw allow 3000/tcp  # Admin Portal
+    sudo ufw allow 3001/tcp  # Customer Portal
+    sudo ufw allow 4000/tcp  # API Backend
+    sudo ufw allow 3002/tcp  # Grafana
+    sudo ufw allow 9090/tcp  # Prometheus
+    sudo ufw allow 5555/tcp  # Flower
+    
+    # Disable IPv6 in UFW
+    sudo sed -i 's/IPV6=yes/IPV6=no/' /etc/default/ufw
+    
     sudo ufw --force enable
+    
+    # Verify SSH is still allowed
+    sudo ufw status | grep -q "22/tcp" && echo "✅ SSH access confirmed"
 fi
 
 # Create environment file if it doesn't exist

@@ -318,3 +318,8 @@ volumes:
 networks:
   haroonnet:
     driver: bridge
+    enable_ipv6: false
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
