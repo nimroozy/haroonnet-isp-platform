@@ -211,8 +211,8 @@ REACT_APP_API_URL=http://$SERVER_IP:8000/api
 REACT_APP_WEBSOCKET_URL=ws://$SERVER_IP:8000/ws
 EOF
 
-# Install and build frontend
-npm install
+# Install and build frontend (with dependency fix)
+npm install --legacy-peer-deps
 npm run build
 
 # Configure Nginx for external access
