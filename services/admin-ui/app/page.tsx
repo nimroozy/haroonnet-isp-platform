@@ -7,63 +7,152 @@ export default function AdminDashboard() {
   const [currentPage, setCurrentPage] = useState('dashboard')
 
   const renderSidebar = () => (
-    <div className="w-64 bg-gray-800 text-white h-screen fixed left-0 top-0 overflow-y-auto">
-      <div className="p-4">
-        <h1 className="text-xl font-bold">HaroonNet ISP</h1>
-        <p className="text-sm text-gray-300">Professional Management</p>
+    <div className="w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white h-screen fixed left-0 top-0 overflow-y-auto shadow-2xl border-r border-slate-700">
+      <div className="p-6 border-b border-slate-700">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+            <span className="text-lg font-bold">🌐</span>
+          </div>
+          <div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">HaroonNet ISP</h1>
+            <p className="text-xs text-slate-400 font-medium">Professional Management</p>
+          </div>
+        </div>
       </div>
 
-      <nav className="mt-8">
-        <div className="px-4 py-2">
-          <h3 className="text-xs uppercase tracking-wide text-gray-400 font-semibold">Dashboard</h3>
-          <ul className="mt-2 space-y-1">
-            <li><button onClick={() => setCurrentPage('dashboard')} className={`w-full text-left px-3 py-2 rounded ${currentPage === 'dashboard' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}>📊 Overview</button></li>
-            <li><button onClick={() => setCurrentPage('reports')} className={`w-full text-left px-3 py-2 rounded ${currentPage === 'reports' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}>📈 Reports</button></li>
+      <nav className="mt-6 px-4">
+        <div className="mb-6">
+          <h3 className="text-xs uppercase tracking-wide text-slate-400 font-bold mb-3 px-3">Dashboard</h3>
+          <ul className="space-y-2">
+            <li>
+              <button
+                onClick={() => setCurrentPage('dashboard')}
+                className={`w-full text-left px-4 py-3 rounded-xl transition duration-200 flex items-center space-x-3 ${
+                  currentPage === 'dashboard'
+                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg'
+                    : 'hover:bg-slate-700/50 text-slate-300'
+                }`}
+              >
+                <span>📊</span><span className="font-medium">Overview</span>
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => setCurrentPage('reports')}
+                className={`w-full text-left px-4 py-3 rounded-xl transition duration-200 flex items-center space-x-3 ${
+                  currentPage === 'reports'
+                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg'
+                    : 'hover:bg-slate-700/50 text-slate-300'
+                }`}
+              >
+                <span>📈</span><span className="font-medium">Reports</span>
+              </button>
+            </li>
           </ul>
         </div>
 
-        <div className="px-4 py-2 mt-6">
-          <h3 className="text-xs uppercase tracking-wide text-gray-400 font-semibold">Customers</h3>
-          <ul className="mt-2 space-y-1">
-            <li><button onClick={() => setCurrentPage('customers')} className={`w-full text-left px-3 py-2 rounded ${currentPage === 'customers' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}>👥 Manage Customers</button></li>
-            <li><button onClick={() => setCurrentPage('add-customer')} className={`w-full text-left px-3 py-2 rounded ${currentPage === 'add-customer' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}>➕ Add Customer</button></li>
-            <li><button onClick={() => setCurrentPage('packages')} className={`w-full text-left px-3 py-2 rounded ${currentPage === 'packages' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}>📦 Service Packages</button></li>
+        <div className="mb-6">
+          <h3 className="text-xs uppercase tracking-wide text-slate-400 font-bold mb-3 px-3">Customers</h3>
+          <ul className="space-y-2">
+            <li>
+              <button onClick={() => setCurrentPage('customers')} className={`w-full text-left px-4 py-3 rounded-xl transition duration-200 flex items-center space-x-3 ${currentPage === 'customers' ? 'bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg' : 'hover:bg-slate-700/50 text-slate-300'}`}>
+                <span>👥</span><span className="font-medium">Manage Customers</span>
+              </button>
+            </li>
+            <li>
+              <button onClick={() => setCurrentPage('add-customer')} className={`w-full text-left px-4 py-3 rounded-xl transition duration-200 flex items-center space-x-3 ${currentPage === 'add-customer' ? 'bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg' : 'hover:bg-slate-700/50 text-slate-300'}`}>
+                <span>➕</span><span className="font-medium">Add Customer</span>
+              </button>
+            </li>
+            <li>
+              <button onClick={() => setCurrentPage('packages')} className={`w-full text-left px-4 py-3 rounded-xl transition duration-200 flex items-center space-x-3 ${currentPage === 'packages' ? 'bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg' : 'hover:bg-slate-700/50 text-slate-300'}`}>
+                <span>📦</span><span className="font-medium">Service Packages</span>
+              </button>
+            </li>
           </ul>
         </div>
 
-        <div className="px-4 py-2 mt-6">
-          <h3 className="text-xs uppercase tracking-wide text-gray-400 font-semibold">Network</h3>
-          <ul className="mt-2 space-y-1">
-            <li><button onClick={() => setCurrentPage('nas')} className={`w-full text-left px-3 py-2 rounded ${currentPage === 'nas' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}>🌐 NAS Devices</button></li>
-            <li><button onClick={() => setCurrentPage('radius')} className={`w-full text-left px-3 py-2 rounded ${currentPage === 'radius' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}>📡 RADIUS Server</button></li>
-            <li><button onClick={() => setCurrentPage('usage')} className={`w-full text-left px-3 py-2 rounded ${currentPage === 'usage' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}>📊 Network Usage</button></li>
+        <div className="mb-6">
+          <h3 className="text-xs uppercase tracking-wide text-slate-400 font-bold mb-3 px-3">Network</h3>
+          <ul className="space-y-2">
+            <li>
+              <button onClick={() => setCurrentPage('nas')} className={`w-full text-left px-4 py-3 rounded-xl transition duration-200 flex items-center space-x-3 ${currentPage === 'nas' ? 'bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg' : 'hover:bg-slate-700/50 text-slate-300'}`}>
+                <span>🌐</span><span className="font-medium">NAS Devices</span>
+              </button>
+            </li>
+            <li>
+              <button onClick={() => setCurrentPage('radius')} className={`w-full text-left px-4 py-3 rounded-xl transition duration-200 flex items-center space-x-3 ${currentPage === 'radius' ? 'bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg' : 'hover:bg-slate-700/50 text-slate-300'}`}>
+                <span>📡</span><span className="font-medium">RADIUS Server</span>
+              </button>
+            </li>
+            <li>
+              <button onClick={() => setCurrentPage('usage')} className={`w-full text-left px-4 py-3 rounded-xl transition duration-200 flex items-center space-x-3 ${currentPage === 'usage' ? 'bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg' : 'hover:bg-slate-700/50 text-slate-300'}`}>
+                <span>📊</span><span className="font-medium">Network Usage</span>
+              </button>
+            </li>
           </ul>
         </div>
 
-        <div className="px-4 py-2 mt-6">
-          <h3 className="text-xs uppercase tracking-wide text-gray-400 font-semibold">Business</h3>
-          <ul className="mt-2 space-y-1">
-            <li><button onClick={() => setCurrentPage('billing')} className={`w-full text-left px-3 py-2 rounded ${currentPage === 'billing' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}>💰 Billing</button></li>
-            <li><button onClick={() => setCurrentPage('tickets')} className={`w-full text-left px-3 py-2 rounded ${currentPage === 'tickets' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}>🎫 Support Tickets</button></li>
-            <li><button onClick={() => setCurrentPage('managers')} className={`w-full text-left px-3 py-2 rounded ${currentPage === 'managers' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}>👨‍💼 Staff Management</button></li>
+        <div className="mb-6">
+          <h3 className="text-xs uppercase tracking-wide text-slate-400 font-bold mb-3 px-3">Business</h3>
+          <ul className="space-y-2">
+            <li>
+              <button onClick={() => setCurrentPage('billing')} className={`w-full text-left px-4 py-3 rounded-xl transition duration-200 flex items-center space-x-3 ${currentPage === 'billing' ? 'bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg' : 'hover:bg-slate-700/50 text-slate-300'}`}>
+                <span>💰</span><span className="font-medium">Billing</span>
+              </button>
+            </li>
+            <li>
+              <button onClick={() => setCurrentPage('tickets')} className={`w-full text-left px-4 py-3 rounded-xl transition duration-200 flex items-center space-x-3 ${currentPage === 'tickets' ? 'bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg' : 'hover:bg-slate-700/50 text-slate-300'}`}>
+                <span>🎫</span><span className="font-medium">Support Tickets</span>
+              </button>
+            </li>
+            <li>
+              <button onClick={() => setCurrentPage('managers')} className={`w-full text-left px-4 py-3 rounded-xl transition duration-200 flex items-center space-x-3 ${currentPage === 'managers' ? 'bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg' : 'hover:bg-slate-700/50 text-slate-300'}`}>
+                <span>👨‍💼</span><span className="font-medium">Staff Management</span>
+              </button>
+            </li>
           </ul>
         </div>
 
-        <div className="px-4 py-2 mt-6">
-          <h3 className="text-xs uppercase tracking-wide text-gray-400 font-semibold">Settings</h3>
-          <ul className="mt-2 space-y-1">
-            <li><button onClick={() => setCurrentPage('sms-config')} className={`w-full text-left px-3 py-2 rounded ${currentPage === 'sms-config' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}>📱 SMS Configuration</button></li>
-            <li><button onClick={() => setCurrentPage('email-config')} className={`w-full text-left px-3 py-2 rounded ${currentPage === 'email-config' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}>📧 Email Settings</button></li>
-            <li><button onClick={() => setCurrentPage('company-settings')} className={`w-full text-left px-3 py-2 rounded ${currentPage === 'company-settings' ? 'bg-blue-600' : 'hover:bg-gray-700'}`}>🏢 Company Settings</button></li>
+        <div className="mb-6">
+          <h3 className="text-xs uppercase tracking-wide text-slate-400 font-bold mb-3 px-3">Settings</h3>
+          <ul className="space-y-2">
+            <li>
+              <button onClick={() => setCurrentPage('sms-config')} className={`w-full text-left px-4 py-3 rounded-xl transition duration-200 flex items-center space-x-3 ${currentPage === 'sms-config' ? 'bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg' : 'hover:bg-slate-700/50 text-slate-300'}`}>
+                <span>📱</span><span className="font-medium">SMS Configuration</span>
+              </button>
+            </li>
+            <li>
+              <button onClick={() => setCurrentPage('email-config')} className={`w-full text-left px-4 py-3 rounded-xl transition duration-200 flex items-center space-x-3 ${currentPage === 'email-config' ? 'bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg' : 'hover:bg-slate-700/50 text-slate-300'}`}>
+                <span>📧</span><span className="font-medium">Email Settings</span>
+              </button>
+            </li>
+            <li>
+              <button onClick={() => setCurrentPage('company-settings')} className={`w-full text-left px-4 py-3 rounded-xl transition duration-200 flex items-center space-x-3 ${currentPage === 'company-settings' ? 'bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg' : 'hover:bg-slate-700/50 text-slate-300'}`}>
+                <span>🏢</span><span className="font-medium">Company Settings</span>
+              </button>
+            </li>
           </ul>
         </div>
 
-        <div className="px-4 py-2 mt-6">
-          <h3 className="text-xs uppercase tracking-wide text-gray-400 font-semibold">Monitoring</h3>
-          <ul className="mt-2 space-y-1">
-            <li><a href="http://167.172.214.191:3002" target="_blank" className="block px-3 py-2 rounded hover:bg-gray-700">📊 Grafana</a></li>
-            <li><a href="http://167.172.214.191:9090" target="_blank" className="block px-3 py-2 rounded hover:bg-gray-700">📈 Prometheus</a></li>
-            <li><a href="http://167.172.214.191:5555" target="_blank" className="block px-3 py-2 rounded hover:bg-gray-700">🌸 Workers</a></li>
+        <div className="mb-6">
+          <h3 className="text-xs uppercase tracking-wide text-slate-400 font-bold mb-3 px-3">Monitoring</h3>
+          <ul className="space-y-2">
+            <li>
+              <a href="http://64.23.189.11:3002" target="_blank" className="block px-4 py-3 rounded-xl transition duration-200 flex items-center space-x-3 hover:bg-slate-700/50 text-slate-300">
+                <span>📊</span><span className="font-medium">Grafana</span>
+              </a>
+            </li>
+            <li>
+              <a href="http://64.23.189.11:9090" target="_blank" className="block px-4 py-3 rounded-xl transition duration-200 flex items-center space-x-3 hover:bg-slate-700/50 text-slate-300">
+                <span>📈</span><span className="font-medium">Prometheus</span>
+              </a>
+            </li>
+            <li>
+              <a href="http://64.23.189.11:5555" target="_blank" className="block px-4 py-3 rounded-xl transition duration-200 flex items-center space-x-3 hover:bg-slate-700/50 text-slate-300">
+                <span>🌸</span><span className="font-medium">Workers</span>
+              </a>
+            </li>
           </ul>
         </div>
       </nav>
@@ -582,47 +671,109 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {!isLoggedIn ? (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-            <div className="text-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-900">HaroonNet ISP</h2>
-              <p className="text-gray-600">Professional Management Platform</p>
-            </div>
-            <form className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                <input type="email" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="admin@haroonnet.com" />
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="max-w-md w-full">
+            {/* Professional Login Card */}
+            <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-white/20">
+              <div className="text-center mb-8">
+                <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-3xl text-white">🌐</span>
+                </div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">HaroonNet ISP</h2>
+                <p className="text-gray-600 font-medium">Professional Management Platform</p>
+                <div className="w-24 h-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full mx-auto mt-4"></div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <input type="password" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter your password" />
+
+              <form className="space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
+                      <span className="text-gray-400">📧</span>
+                    </div>
+                    <input
+                      type="email"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                      placeholder="admin@haroonnet.com"
+                      defaultValue="admin@haroonnet.com"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
+                      <span className="text-gray-400">🔒</span>
+                    </div>
+                    <input
+                      type="password"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                      placeholder="Enter your password"
+                      defaultValue="admin123"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center">
+                    <input type="checkbox" className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                    <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                  </label>
+                  <a href="#" className="text-sm text-blue-600 hover:text-blue-800 font-medium">Forgot password?</a>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsLoggedIn(true)}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 transition duration-200 font-semibold shadow-lg transform hover:scale-105"
+                >
+                  🚀 Login to Admin Panel
+                </button>
+              </form>
+
+              <div className="mt-8 text-center">
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 mb-4">
+                  <p className="text-sm font-semibold text-gray-700 mb-2">🔑 Default Credentials</p>
+                  <p className="text-sm text-gray-600">Email: admin@haroonnet.com</p>
+                  <p className="text-sm text-gray-600">Password: admin123</p>
+                </div>
+                <p className="text-xs text-gray-500">Secure Professional ISP Management System</p>
               </div>
-              <button type="button" onClick={() => setIsLoggedIn(true)} className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition duration-200 font-medium">
-                Login to Admin Panel
-              </button>
-            </form>
-            <div className="mt-6 text-center text-sm text-gray-500">
-              <p>Professional ISP Management Platform</p>
-              <p>Default: admin@haroonnet.com / admin123</p>
             </div>
           </div>
         </div>
       ) : (
-        <div className="flex">
+        <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
           {renderSidebar()}
-          <div className="ml-64 flex-1 p-8">
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Professional ISP Management</h1>
-                <p className="text-gray-600">Complete customer, network, and billing management</p>
+          <div className="ml-64 flex-1">
+            {/* Professional Header */}
+            <div className="bg-white shadow-sm border-b border-slate-200">
+              <div className="px-8 py-6">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Professional ISP Management</h1>
+                    <p className="text-slate-600 font-medium mt-1">Complete customer, network, and billing management</p>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-slate-700">Administrator</p>
+                      <p className="text-xs text-slate-500">admin@haroonnet.com</p>
+                    </div>
+                    <button onClick={() => setIsLoggedIn(false)} className="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-2 rounded-lg hover:from-red-600 hover:to-red-700 transition duration-200 font-medium shadow-lg">
+                      Logout
+                    </button>
+                  </div>
+                </div>
               </div>
-              <button onClick={() => setIsLoggedIn(false)} className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">
-                Logout
-              </button>
             </div>
-            {renderContent()}
+
+            {/* Main Content */}
+            <div className="p-8">
+              {renderContent()}
+            </div>
           </div>
         </div>
       )}

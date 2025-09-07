@@ -16,17 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <div className="min-h-screen bg-gray-50">
-          <header className="bg-blue-600 text-white p-4">
-            <div className="container mx-auto">
-              <h1 className="text-2xl font-bold">HaroonNet ISP Admin</h1>
-              <p className="text-blue-100">Management Portal</p>
-            </div>
-          </header>
-          <main className="container mx-auto py-8">
-            {children}
-          </main>
-        </div>
+        {children}
       </body>
     </html>
   )
