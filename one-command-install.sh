@@ -2,7 +2,7 @@
 
 # HaroonNet ISP Platform - One Command Installation
 # Complete ISP management platform with web interfaces
-# 
+#
 # Usage: curl -sSL https://raw.githubusercontent.com/nimroozy/haroonnet-isp-platform/main/one-command-install.sh | bash
 
 set -e
