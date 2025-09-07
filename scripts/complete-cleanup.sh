@@ -119,7 +119,7 @@ if [[ $REMAINING_CONTAINERS -eq 0 && $REMAINING_VOLUMES -eq 0 && $REMAINING_NETW
 else
     print_status "WARNING" "Some components may still exist:"
     print_status "INFO" "Containers: $REMAINING_CONTAINERS"
-    print_status "INFO" "Volumes: $REMAINING_VOLUMES" 
+    print_status "INFO" "Volumes: $REMAINING_VOLUMES"
     print_status "INFO" "Networks: $REMAINING_NETWORKS"
     print_status "INFO" "Images: $REMAINING_IMAGES"
 fi
