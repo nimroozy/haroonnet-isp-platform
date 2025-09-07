@@ -50,9 +50,14 @@ echo ""
 
 # Check if running as root
 if [[ $EUID -eq 0 ]]; then
-    print_status "ERROR" "This script should not be run as root for security reasons"
-    print_status "INFO" "Please run as a regular user with sudo privileges"
-    exit 1
+    print_status "WARNING" "Running as root user detected"
+    print_status "INFO" "For production environments, consider using a regular user with sudo privileges"
+    print_status "INFO" "Continuing with root installation..."
+    # Set user variables for root
+    USER="root"
+    HOME="/root"
+else
+    print_status "SUCCESS" "Running as non-root user"
 fi
 
 # Check Ubuntu version
@@ -66,19 +71,30 @@ if ! grep -q "22.04" /etc/os-release; then
 fi
 
 print_status "SUCCESS" "Ubuntu 22.04 LTS detected"
-print_status "SUCCESS" "Running as non-root user"
 
 # Install system requirements
 print_status "INFO" "Installing system packages and dependencies..."
-sudo apt update
-sudo apt install -y curl wget git htop tree jq vim nano ufw fail2ban build-essential python3-pip
+if [[ $EUID -eq 0 ]]; then
+    # Running as root, no need for sudo
+    apt update
+    apt install -y curl wget git htop tree jq vim nano ufw fail2ban build-essential python3-pip
+else
+    # Running as regular user, use sudo
+    sudo apt update
+    sudo apt install -y curl wget git htop tree jq vim nano ufw fail2ban build-essential python3-pip
+fi
 
 # Install Docker
 print_status "INFO" "Installing Docker and Docker Compose..."
 if ! command -v docker &> /dev/null; then
     curl -fsSL https://get.docker.com -o get-docker.sh
-    sudo sh get-docker.sh
-    sudo usermod -aG docker $USER
+    if [[ $EUID -eq 0 ]]; then
+        sh get-docker.sh
+        # Root doesn't need to be added to docker group
+    else
+        sudo sh get-docker.sh
+        sudo usermod -aG docker $USER
+    fi
     rm get-docker.sh
     print_status "SUCCESS" "Docker installed"
 else
@@ -87,8 +103,13 @@ fi
 
 # Install Docker Compose
 if ! command -v docker-compose &> /dev/null; then
-    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-    sudo chmod +x /usr/local/bin/docker-compose
+    if [[ $EUID -eq 0 ]]; then
+        curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        chmod +x /usr/local/bin/docker-compose
+    else
+        sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+    fi
     print_status "SUCCESS" "Docker Compose installed"
 else
     print_status "SUCCESS" "Docker Compose already installed"
@@ -96,41 +117,76 @@ fi
 
 # Configure firewall for ISP services
 print_status "INFO" "Configuring professional ISP firewall..."
-sudo ufw --force reset
-sudo ufw default deny incoming
-sudo ufw default allow outgoing
-
-# Essential services
-sudo ufw allow ssh
-sudo ufw allow 80/tcp   # HTTP
-sudo ufw allow 443/tcp  # HTTPS
-
-# RADIUS ports
-sudo ufw allow 1812/udp  # RADIUS Authentication
-sudo ufw allow 1813/udp  # RADIUS Accounting
-sudo ufw allow 3799/udp  # CoA/DM
-
-# Web management interfaces
-sudo ufw allow 3000/tcp  # Admin Portal
-sudo ufw allow 3001/tcp  # Customer Portal
-sudo ufw allow 4000/tcp  # API Backend
-sudo ufw allow 3002/tcp  # Grafana Monitoring
-sudo ufw allow 9090/tcp  # Prometheus Metrics
-sudo ufw allow 5555/tcp  # Worker Monitoring
-
-sudo ufw --force enable
+if [[ $EUID -eq 0 ]]; then
+    ufw --force reset
+    ufw default deny incoming
+    ufw default allow outgoing
+    
+    # Essential services
+    ufw allow ssh
+    ufw allow 80/tcp   # HTTP
+    ufw allow 443/tcp  # HTTPS
+    
+    # RADIUS ports
+    ufw allow 1812/udp  # RADIUS Authentication
+    ufw allow 1813/udp  # RADIUS Accounting
+    ufw allow 3799/udp  # CoA/DM
+    
+    # Web management interfaces
+    ufw allow 3000/tcp  # Admin Portal
+    ufw allow 3001/tcp  # Customer Portal
+    ufw allow 4000/tcp  # API Backend
+    ufw allow 3002/tcp  # Grafana Monitoring
+    ufw allow 9090/tcp  # Prometheus Metrics
+    ufw allow 5555/tcp  # Worker Monitoring
+    
+    ufw --force enable
+else
+    sudo ufw --force reset
+    sudo ufw default deny incoming
+    sudo ufw default allow outgoing
+    
+    # Essential services
+    sudo ufw allow ssh
+    sudo ufw allow 80/tcp   # HTTP
+    sudo ufw allow 443/tcp  # HTTPS
+    
+    # RADIUS ports
+    sudo ufw allow 1812/udp  # RADIUS Authentication
+    sudo ufw allow 1813/udp  # RADIUS Accounting
+    sudo ufw allow 3799/udp  # CoA/DM
+    
+    # Web management interfaces
+    sudo ufw allow 3000/tcp  # Admin Portal
+    sudo ufw allow 3001/tcp  # Customer Portal
+    sudo ufw allow 4000/tcp  # API Backend
+    sudo ufw allow 3002/tcp  # Grafana Monitoring
+    sudo ufw allow 9090/tcp  # Prometheus Metrics
+    sudo ufw allow 5555/tcp  # Worker Monitoring
+    
+    sudo ufw --force enable
+fi
 print_status "SUCCESS" "Professional ISP firewall configured"
 
 # Download the professional ISP platform
 print_status "INFO" "Downloading Professional HaroonNet ISP Platform..."
 cd ~
-sudo rm -rf /opt/haroonnet
-rm -rf haroonnet-isp-platform
-
-git clone https://github.com/nimroozy/haroonnet-isp-platform.git
-sudo mv haroonnet-isp-platform /opt/haroonnet
-sudo chown -R $USER:$USER /opt/haroonnet
-cd /opt/haroonnet
+if [[ $EUID -eq 0 ]]; then
+    rm -rf /opt/haroonnet
+    rm -rf haroonnet-isp-platform
+    
+    git clone https://github.com/nimroozy/haroonnet-isp-platform.git
+    mv haroonnet-isp-platform /opt/haroonnet
+    cd /opt/haroonnet
+else
+    sudo rm -rf /opt/haroonnet
+    rm -rf haroonnet-isp-platform
+    
+    git clone https://github.com/nimroozy/haroonnet-isp-platform.git
+    sudo mv haroonnet-isp-platform /opt/haroonnet
+    sudo chown -R $USER:$USER /opt/haroonnet
+    cd /opt/haroonnet
+fi
 
 # Generate secure configuration
 print_status "INFO" "Generating secure professional configuration..."
@@ -255,7 +311,11 @@ touch config/promtail/promtail-config.yml
 
 # Set timezone for Afghanistan
 print_status "INFO" "Setting timezone to Asia/Kabul..."
-sudo timedatectl set-timezone Asia/Kabul
+if [[ $EUID -eq 0 ]]; then
+    timedatectl set-timezone Asia/Kabul
+else
+    sudo timedatectl set-timezone Asia/Kabul
+fi
 
 # Build the professional ISP platform
 print_status "INFO" "Building Professional ISP Management Platform..."
@@ -365,7 +425,7 @@ echo ""
 print_status "FEATURE" "Open http://$SERVER_IP:3000 to start managing your ISP!"
 
 # Check if user needs to logout/login for docker group
-if ! groups | grep -q docker; then
+if [[ $EUID -ne 0 ]] && ! groups | grep -q docker; then
     echo ""
     print_status "WARNING" "You need to logout and login again for Docker group membership"
     echo "After logging back in, your professional ISP platform will be fully operational"

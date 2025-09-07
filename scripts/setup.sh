@@ -9,8 +9,13 @@ echo "🚀 Setting up HaroonNet ISP Platform..."
 
 # Check if running as root
 if [[ $EUID -eq 0 ]]; then
-   echo "This script should not be run as root for security reasons."
-   exit 1
+   echo "⚠️  Running as root user detected"
+   echo "ℹ️  For production environments, consider using a regular user with sudo privileges"
+   echo "ℹ️  Continuing with root installation..."
+   USER="root"
+   HOME="/root"
+else
+   echo "✅ Running as non-root user"
 fi
 
 # Check Ubuntu version
@@ -25,14 +30,23 @@ fi
 
 # Update system packages
 echo "📦 Updating system packages..."
-sudo apt update && sudo apt upgrade -y
+if [[ $EUID -eq 0 ]]; then
+    apt update && apt upgrade -y
+else
+    sudo apt update && sudo apt upgrade -y
+fi
 
 # Install Docker and Docker Compose
 echo "🐳 Installing Docker..."
 if ! command -v docker &> /dev/null; then
     curl -fsSL https://get.docker.com -o get-docker.sh
-    sudo sh get-docker.sh
-    sudo usermod -aG docker $USER
+    if [[ $EUID -eq 0 ]]; then
+        sh get-docker.sh
+        # Root doesn't need to be added to docker group
+    else
+        sudo sh get-docker.sh
+        sudo usermod -aG docker $USER
+    fi
     rm get-docker.sh
     echo "Docker installed successfully"
 else
@@ -42,8 +56,13 @@ fi
 # Install Docker Compose
 echo "🔧 Installing Docker Compose..."
 if ! command -v docker-compose &> /dev/null; then
-    sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-    sudo chmod +x /usr/local/bin/docker-compose
+    if [[ $EUID -eq 0 ]]; then
+        curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        chmod +x /usr/local/bin/docker-compose
+    else
+        sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+    fi
     echo "Docker Compose installed successfully"
 else
     echo "Docker Compose already installed"
@@ -51,20 +70,37 @@ fi
 
 # Install additional tools
 echo "🛠️  Installing additional tools..."
-sudo apt install -y curl wget git htop tree jq ufw fail2ban
+if [[ $EUID -eq 0 ]]; then
+    apt install -y curl wget git htop tree jq ufw fail2ban
+else
+    sudo apt install -y curl wget git htop tree jq ufw fail2ban
+fi
 
 # Configure firewall
 echo "🔒 Configuring firewall..."
-sudo ufw --force reset
-sudo ufw default deny incoming
-sudo ufw default allow outgoing
-sudo ufw allow ssh
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw allow 1812/udp  # RADIUS Auth
-sudo ufw allow 1813/udp  # RADIUS Accounting
-sudo ufw allow 3799/udp  # CoA/DM
-sudo ufw --force enable
+if [[ $EUID -eq 0 ]]; then
+    ufw --force reset
+    ufw default deny incoming
+    ufw default allow outgoing
+    ufw allow ssh
+    ufw allow 80/tcp
+    ufw allow 443/tcp
+    ufw allow 1812/udp  # RADIUS Auth
+    ufw allow 1813/udp  # RADIUS Accounting
+    ufw allow 3799/udp  # CoA/DM
+    ufw --force enable
+else
+    sudo ufw --force reset
+    sudo ufw default deny incoming
+    sudo ufw default allow outgoing
+    sudo ufw allow ssh
+    sudo ufw allow 80/tcp
+    sudo ufw allow 443/tcp
+    sudo ufw allow 1812/udp  # RADIUS Auth
+    sudo ufw allow 1813/udp  # RADIUS Accounting
+    sudo ufw allow 3799/udp  # CoA/DM
+    sudo ufw --force enable
+fi
 
 # Create environment file if it doesn't exist
 echo "⚙️  Setting up environment configuration..."
@@ -142,7 +178,7 @@ echo "🆘 Support: Create an issue in the repository for help"
 echo ""
 
 # Check if user needs to logout/login for docker group
-if ! groups | grep -q docker; then
+if [[ $EUID -ne 0 ]] && ! groups | grep -q docker; then
     echo "⚠️  You need to logout and login again for Docker group membership to take effect."
 fi
 
