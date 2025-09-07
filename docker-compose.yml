@@ -229,6 +229,7 @@ services:
     volumes:
       - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./config/nginx/conf.d:/etc/nginx/conf.d
+      - ./config/nginx/auth:/etc/nginx/auth
       - ./ssl:/etc/nginx/ssl
       - nginx_logs:/var/log/nginx
     depends_on:
