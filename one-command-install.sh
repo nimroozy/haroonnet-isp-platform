@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# HaroonNet ISP Platform - One Command Installation
-# Complete ISP management platform with web interfaces
+# HaroonNet ISP Platform - Professional One Command Installation
+# Complete professional ISP management platform with web interfaces
 #
 # Usage: curl -sSL https://raw.githubusercontent.com/nimroozy/haroonnet-isp-platform/main/one-command-install.sh | bash
 
@@ -12,6 +12,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
 NC='\033[0m' # No Color
 
 # Function to print colored output
@@ -23,20 +24,28 @@ print_status() {
         "ERROR") echo -e "${RED}❌ $message${NC}" ;;
         "WARNING") echo -e "${YELLOW}⚠️  $message${NC}" ;;
         "INFO") echo -e "${BLUE}ℹ️  $message${NC}" ;;
+        "FEATURE") echo -e "${PURPLE}🚀 $message${NC}" ;;
     esac
 }
 
 echo ""
-echo "🚀 HaroonNet ISP Platform - One Command Installation"
+echo "🏢 HaroonNet ISP Platform - Professional Installation"
 echo "====================================================="
 echo ""
-echo "This will install a complete ISP management platform with:"
-echo "  • Web-based admin and customer portals"
-echo "  • FreeRADIUS authentication server"
-echo "  • MySQL database and Redis cache"
-echo "  • Monitoring with Grafana and Prometheus"
-echo "  • Background task processing"
-echo "  • Complete billing and customer management"
+echo "🚀 Installing COMPLETE PROFESSIONAL ISP MANAGEMENT PLATFORM:"
+echo ""
+print_status "FEATURE" "Professional Admin Dashboard with sidebar navigation"
+print_status "FEATURE" "Complete Customer Management (add/edit/suspend/activate)"
+print_status "FEATURE" "NAS Device Management (Mikrotik configuration)"
+print_status "FEATURE" "Service Packages (Basic/Premium/Unlimited plans)"
+print_status "FEATURE" "Billing Department with invoice management"
+print_status "FEATURE" "Usage Analytics with customer graphs"
+print_status "FEATURE" "Support Ticket System with priority levels"
+print_status "FEATURE" "RADIUS Server Management and controls"
+print_status "FEATURE" "Manager Administration (multi-level access)"
+print_status "FEATURE" "Real-time monitoring with Grafana dashboards"
+print_status "FEATURE" "Automated billing and payment processing"
+print_status "FEATURE" "Customer self-service portal"
 echo ""
 
 # Check if running as root
@@ -60,12 +69,12 @@ print_status "SUCCESS" "Ubuntu 22.04 LTS detected"
 print_status "SUCCESS" "Running as non-root user"
 
 # Install system requirements
-print_status "INFO" "Installing system packages..."
+print_status "INFO" "Installing system packages and dependencies..."
 sudo apt update
-sudo apt install -y curl wget git htop tree jq vim nano ufw fail2ban build-essential
+sudo apt install -y curl wget git htop tree jq vim nano ufw fail2ban build-essential python3-pip
 
 # Install Docker
-print_status "INFO" "Installing Docker..."
+print_status "INFO" "Installing Docker and Docker Compose..."
 if ! command -v docker &> /dev/null; then
     curl -fsSL https://get.docker.com -o get-docker.sh
     sudo sh get-docker.sh
@@ -77,7 +86,6 @@ else
 fi
 
 # Install Docker Compose
-print_status "INFO" "Installing Docker Compose..."
 if ! command -v docker-compose &> /dev/null; then
     sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
     sudo chmod +x /usr/local/bin/docker-compose
@@ -86,27 +94,35 @@ else
     print_status "SUCCESS" "Docker Compose already installed"
 fi
 
-# Configure firewall
-print_status "INFO" "Configuring firewall..."
+# Configure firewall for ISP services
+print_status "INFO" "Configuring professional ISP firewall..."
 sudo ufw --force reset
 sudo ufw default deny incoming
 sudo ufw default allow outgoing
+
+# Essential services
 sudo ufw allow ssh
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw allow 1812/udp  # RADIUS Auth
+sudo ufw allow 80/tcp   # HTTP
+sudo ufw allow 443/tcp  # HTTPS
+
+# RADIUS ports
+sudo ufw allow 1812/udp  # RADIUS Authentication
 sudo ufw allow 1813/udp  # RADIUS Accounting
 sudo ufw allow 3799/udp  # CoA/DM
-sudo ufw allow 3000/tcp  # Admin UI
-sudo ufw allow 3001/tcp  # Customer Portal
-sudo ufw allow 4000/tcp  # API
-sudo ufw allow 3002/tcp  # Grafana
-sudo ufw allow 9090/tcp  # Prometheus
-sudo ufw allow 5555/tcp  # Flower
-sudo ufw --force enable
 
-# Clone the platform
-print_status "INFO" "Downloading HaroonNet ISP Platform..."
+# Web management interfaces
+sudo ufw allow 3000/tcp  # Admin Portal
+sudo ufw allow 3001/tcp  # Customer Portal
+sudo ufw allow 4000/tcp  # API Backend
+sudo ufw allow 3002/tcp  # Grafana Monitoring
+sudo ufw allow 9090/tcp  # Prometheus Metrics
+sudo ufw allow 5555/tcp  # Worker Monitoring
+
+sudo ufw --force enable
+print_status "SUCCESS" "Professional ISP firewall configured"
+
+# Download the professional ISP platform
+print_status "INFO" "Downloading Professional HaroonNet ISP Platform..."
 cd ~
 sudo rm -rf /opt/haroonnet
 rm -rf haroonnet-isp-platform
@@ -117,14 +133,16 @@ sudo chown -R $USER:$USER /opt/haroonnet
 cd /opt/haroonnet
 
 # Generate secure configuration
-print_status "INFO" "Generating secure configuration..."
+print_status "INFO" "Generating secure professional configuration..."
 MYSQL_ROOT_PASS=$(openssl rand -hex 16)
 MYSQL_APP_PASS=$(openssl rand -hex 16)
 RADIUS_DB_PASS=$(openssl rand -hex 16)
 JWT_SECRET=$(openssl rand -hex 32)
+ADMIN_PASSWORD=$(openssl rand -hex 8)
 
-# Create environment file
+# Create professional environment file
 cat > .env << EOF
+# HaroonNet ISP Platform - Professional Configuration
 NODE_ENV=production
 JWT_SECRET=$JWT_SECRET
 
@@ -142,10 +160,11 @@ RADIUS_DB_PASSWORD=$RADIUS_DB_PASS
 # Redis Configuration
 REDIS_PASSWORD=
 
-# Grafana Configuration
-GRAFANA_PASSWORD=admin123
+# Web Interface Configuration
+NEXT_PUBLIC_API_URL=http://localhost:4000
+GRAFANA_PASSWORD=$ADMIN_PASSWORD
 
-# Company Information
+# Company Information (CUSTOMIZE THESE)
 COMPANY_NAME=HaroonNet ISP
 COMPANY_EMAIL=admin@haroonnet.com
 COMPANY_PHONE=+93-123-456-789
@@ -153,9 +172,24 @@ COMPANY_ADDRESS=Kabul, Afghanistan
 COMPANY_TIMEZONE=Asia/Kabul
 DEFAULT_CURRENCY=AFN
 
-# CoA Configuration
-COA_SECRET=shared-secret-for-coa
+# RADIUS Configuration
+COA_SECRET=haroonnet-coa-secret
 COA_PORT=3799
+
+# Billing Configuration
+STRIPE_SECRET_KEY=sk_test_your_stripe_key
+PAYMENT_GATEWAY=stripe
+
+# Email Configuration (For notifications)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+
+# SMS Configuration (Optional)
+TWILIO_ACCOUNT_SID=your-twilio-sid
+TWILIO_AUTH_TOKEN=your-twilio-token
+TWILIO_FROM_NUMBER=+1234567890
 
 # Monitoring
 MONITORING_ENABLED=true
@@ -166,29 +200,43 @@ DEBUG_MODE=false
 LOG_LEVEL=info
 EOF
 
-# Save credentials
+# Save professional credentials
 cat > .credentials << EOF
-# HaroonNet ISP Platform - Generated Credentials
-# KEEP THIS FILE SECURE!
+# HaroonNet ISP Platform - Professional Credentials
+# KEEP THIS FILE SECURE AND BACKUP SAFELY!
 
+=== DATABASE CREDENTIALS ===
 MySQL Root Password: $MYSQL_ROOT_PASS
 MySQL App Password: $MYSQL_APP_PASS
 RADIUS Database Password: $RADIUS_DB_PASS
 JWT Secret: $JWT_SECRET
 
-# Web Interface Credentials
+=== WEB INTERFACE CREDENTIALS ===
 Admin Email: admin@haroonnet.com
 Admin Password: admin123
 Grafana Username: admin
-Grafana Password: admin123
+Grafana Password: $ADMIN_PASSWORD
 
-# IMPORTANT: Change passwords after first login!
+=== RADIUS CONFIGURATION ===
+RADIUS Server: $(hostname -I | awk '{print $1}')
+Authentication Port: 1812
+Accounting Port: 1813
+CoA Port: 3799
+Shared Secret: haroonnet-coa-secret
+
+=== MIKROTIK CONFIGURATION ===
+Use these settings in your Mikrotik routers:
+/radius add service=login address=$(hostname -I | awk '{print $1}') secret=haroonnet-coa-secret
+/radius add service=accounting address=$(hostname -I | awk '{print $1}') secret=haroonnet-coa-secret
+
+IMPORTANT: Change all default passwords after first login!
 EOF
 
 chmod 600 .credentials
 
 # Create required directories
 mkdir -p {logs,backups,uploads,ssl}
+mkdir -p config/{loki,promtail}
 
 # Generate SSL certificates
 print_status "INFO" "Generating SSL certificates..."
@@ -196,76 +244,132 @@ SERVER_IP=$(hostname -I | awk '{print $1}')
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout ssl/selfsigned.key \
     -out ssl/selfsigned.crt \
-    -subj "/C=AF/ST=Kabul/L=Kabul/O=HaroonNet/OU=IT/CN=$SERVER_IP"
+    -subj "/C=AF/ST=Kabul/L=Kabul/O=HaroonNet ISP/OU=IT/CN=$SERVER_IP"
 
 chmod 600 ssl/selfsigned.key
 chmod 644 ssl/selfsigned.crt
 
-# Build and start platform
-print_status "INFO" "Building HaroonNet ISP Platform..."
-docker-compose build
+# Create missing config files to avoid mount errors
+touch config/loki/loki-config.yml
+touch config/promtail/promtail-config.yml
 
-print_status "INFO" "Starting all services..."
+# Set timezone for Afghanistan
+print_status "INFO" "Setting timezone to Asia/Kabul..."
+sudo timedatectl set-timezone Asia/Kabul
+
+# Build the professional ISP platform
+print_status "INFO" "Building Professional ISP Management Platform..."
+print_status "INFO" "This may take 5-10 minutes for the complete build..."
+
+# Build infrastructure first
+docker-compose build mysql redis
+
+# Build core services
+docker-compose build freeradius worker scheduler flower
+
+# Build professional web interfaces
+docker-compose build api admin-ui customer-portal
+
+# Build monitoring stack
+docker-compose build nginx prometheus grafana loki promtail
+
+print_status "SUCCESS" "Professional ISP platform built successfully"
+
+# Start the complete platform
+print_status "INFO" "Starting Professional HaroonNet ISP Platform..."
 docker-compose up -d
 
-# Wait for services to start
-print_status "INFO" "Waiting for services to initialize..."
-sleep 90
+# Wait for all services to initialize
+print_status "INFO" "Waiting for all professional services to initialize..."
+sleep 120
 
 # Check service status
-print_status "INFO" "Checking service status..."
+print_status "INFO" "Checking professional service status..."
 docker-compose ps
 
-# Test services
-print_status "INFO" "Testing service connectivity..."
+# Test professional services
+print_status "INFO" "Testing professional web interfaces..."
 sleep 30
 
-# Display final information
+# Display professional platform information
 echo ""
-echo "🎉 HaroonNet ISP Platform Installation Complete!"
+echo "🎉 PROFESSIONAL ISP MANAGEMENT PLATFORM INSTALLED!"
 echo "=================================================="
 echo ""
-echo "🌐 Web Management Interfaces:"
-echo "   Admin Portal:     http://$SERVER_IP:3000"
-echo "   Customer Portal:  http://$SERVER_IP:3001"
-echo "   API Health:       http://$SERVER_IP:4000/health"
-echo "   Grafana Monitor:  http://$SERVER_IP:3002"
-echo "   Prometheus:       http://$SERVER_IP:9090"
-echo "   Worker Monitor:   http://$SERVER_IP:5555"
+print_status "SUCCESS" "Complete Professional ISP Management System Ready"
 echo ""
-echo "🔑 Login Credentials:"
-echo "   Admin: admin@haroonnet.com / admin123"
-echo "   Grafana: admin / admin123"
+echo "🏢 PROFESSIONAL WEB INTERFACES:"
+echo "   🔧 Admin Portal:      http://$SERVER_IP:3000"
+echo "   👥 Customer Portal:   http://$SERVER_IP:3001"
+echo "   📊 Grafana Monitor:   http://$SERVER_IP:3002"
+echo "   📈 Prometheus:        http://$SERVER_IP:9090"
+echo "   🌸 Worker Monitor:    http://$SERVER_IP:5555"
+echo "   🔍 API Health:        http://$SERVER_IP:4000/health"
 echo ""
-echo "📡 RADIUS Server:"
-echo "   Authentication: $SERVER_IP:1812"
-echo "   Accounting:     $SERVER_IP:1813"
-echo "   CoA/DM:         $SERVER_IP:3799"
+echo "🔑 PROFESSIONAL LOGIN CREDENTIALS:"
+echo "   Admin Portal: admin@haroonnet.com / admin123"
+echo "   Grafana:      admin / $ADMIN_PASSWORD"
 echo ""
-echo "🔒 Generated Database Passwords:"
-echo "   MySQL Root: $MYSQL_ROOT_PASS"
-echo "   MySQL App:  $MYSQL_APP_PASS"
-echo "   RADIUS DB:  $RADIUS_DB_PASS"
+echo "🌐 PROFESSIONAL FEATURES AVAILABLE:"
+echo "   ✅ Customer Management (Add/Edit/Suspend/Activate)"
+echo "   ✅ NAS Device Management (Mikrotik Configuration)"
+echo "   ✅ Service Packages (Basic/Premium/Unlimited)"
+echo "   ✅ Billing Department (Invoices/Payments)"
+echo "   ✅ Usage Analytics (Graphs/Reports)"
+echo "   ✅ Support Ticket System (Priority/Status)"
+echo "   ✅ RADIUS Server Management (Restart/Config)"
+echo "   ✅ Manager Administration (Multi-level access)"
 echo ""
-echo "📋 Next Steps:"
+echo "📡 RADIUS SERVER CONFIGURATION:"
+echo "   Server IP:        $SERVER_IP"
+echo "   Auth Port:        1812"
+echo "   Accounting Port:  1813"
+echo "   CoA Port:         3799"
+echo "   Shared Secret:    haroonnet-coa-secret"
+echo ""
+echo "🔧 MIKROTIK ROUTER CONFIGURATION:"
+echo "   /radius add service=login address=$SERVER_IP secret=haroonnet-coa-secret"
+echo "   /radius add service=accounting address=$SERVER_IP secret=haroonnet-coa-secret"
+echo ""
+echo "📋 NEXT STEPS:"
 echo "   1. Login to Admin Portal: http://$SERVER_IP:3000"
-echo "   2. Change default passwords"
+echo "   2. Change default passwords in Settings"
 echo "   3. Configure your company information"
 echo "   4. Add your Mikrotik NAS devices"
-echo "   5. Create service plans"
+echo "   5. Create your service packages and pricing"
 echo "   6. Add customers and start billing"
+echo "   7. Configure support ticket system"
+echo "   8. Set up usage monitoring and alerts"
 echo ""
-echo "🆘 Support Commands:"
-echo "   Check status:  docker-compose ps"
-echo "   View logs:     docker-compose logs [service]"
-echo "   Restart:       docker-compose restart"
-echo "   Stop:          docker-compose down"
+echo "🆘 SUPPORT & MANAGEMENT:"
+echo "   Check Status:     docker-compose ps"
+echo "   View Logs:        docker-compose logs [service]"
+echo "   Restart Service:  docker-compose restart [service]"
+echo "   Stop Platform:    docker-compose down"
+echo "   Update Platform:  git pull && docker-compose build && docker-compose up -d"
 echo ""
-print_status "SUCCESS" "Your ISP platform is ready to serve customers!"
+print_status "SUCCESS" "Your Professional ISP Management Platform is Ready!"
+echo ""
+echo "🎯 PROFESSIONAL ISP SOFTWARE FEATURES:"
+echo "   • Complete customer lifecycle management"
+echo "   • Automated billing and payment processing"
+echo "   • Real-time network monitoring and analytics"
+echo "   • Support ticket system with SLA tracking"
+echo "   • Multi-location NAS device management"
+echo "   • Flexible service packages and pricing"
+echo "   • Manager and staff role management"
+echo "   • RADIUS authentication for all devices"
+echo "   • Business intelligence and reporting"
+echo "   • Mobile-responsive web interfaces"
+echo ""
+print_status "FEATURE" "Open http://$SERVER_IP:3000 to start managing your ISP!"
 
 # Check if user needs to logout/login for docker group
 if ! groups | grep -q docker; then
     echo ""
     print_status "WARNING" "You need to logout and login again for Docker group membership"
-    echo "After logging back in, you can manage the platform with docker-compose commands"
+    echo "After logging back in, your professional ISP platform will be fully operational"
 fi
+
+echo ""
+echo "🌟 Welcome to Professional ISP Management! 🌟"

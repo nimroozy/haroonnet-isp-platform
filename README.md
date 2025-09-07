@@ -1,165 +1,243 @@
-# 🌐 HaroonNet ISP Platform
+# 🏢 HaroonNet ISP Platform - Professional Edition
 
-A complete ISP management platform with web-based administration, customer portal, RADIUS authentication, billing, and monitoring.
+A **complete professional ISP management platform** with comprehensive web-based administration, customer management, RADIUS authentication, billing, monitoring, and support systems.
 
-## ✨ Features
+## 🚀 **ONE-COMMAND PROFESSIONAL INSTALLATION**
 
-- 🔧 **Web-based Admin Portal** - Complete ISP management interface
-- 👥 **Customer Portal** - Self-service portal for customers
-- 📡 **FreeRADIUS Server** - Authentication for Mikrotik and other NAS devices
-- 💰 **Billing System** - Automated invoicing and payment processing
-- 📊 **Monitoring** - Grafana dashboards and Prometheus metrics
-- 🔄 **Background Tasks** - Celery workers for automated operations
-- 🔒 **Security** - JWT authentication, SSL, firewall configuration
-- 📱 **Mobile Responsive** - Works on all devices
-
-## 🚀 One-Command Installation
-
-Install the complete platform on Ubuntu 22.04 LTS:
+Install the complete professional ISP management platform on Ubuntu 22.04 LTS:
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/nimroozy/haroonnet-isp-platform/main/one-command-install.sh | bash
 ```
 
-## 📋 Manual Installation
+**That's it!** Your complete professional ISP management system will be ready in 10-15 minutes.
 
-If you prefer manual installation:
+---
 
-```bash
-# 1. Clone the repository
-git clone https://github.com/nimroozy/haroonnet-isp-platform.git
-cd haroonnet-isp-platform
+## 🏢 **PROFESSIONAL FEATURES**
 
-# 2. Run the installation script
-chmod +x fix-and-install.sh
-./fix-and-install.sh
+### 🔧 **Professional Admin Dashboard**
+- **📊 Executive Dashboard** - Complete ISP KPIs, revenue, customer metrics
+- **👥 Customer Management** - Add, edit, suspend, activate customers with full profiles
+- **🌐 NAS Device Management** - Add, configure, restart Mikrotik routers remotely
+- **📦 Service Package Management** - Create Basic/Premium/Unlimited plans with custom pricing
+- **💰 Billing Department** - Professional invoice generation, payment tracking, overdue management
+- **📈 Usage Analytics** - Real-time customer usage graphs, network performance analytics
+- **🎫 Support Ticket System** - Full ticket management with priority levels and SLA tracking
+- **📡 RADIUS Server Management** - Restart, configure, monitor authentication server
+- **👨‍💼 Manager Administration** - Multi-level user access, staff management, role-based permissions
+
+### 👥 **Customer Self-Service Portal**
+- **📱 Account Dashboard** - Usage tracking, billing history, account status
+- **💳 Online Payment System** - Secure bill payment, payment history
+- **📊 Usage Monitoring** - Real-time data consumption tracking with graphs
+- **🎫 Support System** - Submit tickets, track status, live chat
+- **📋 Service Management** - Upgrade/downgrade plans, service history
+
+### 📡 **Network Management**
+- **🌐 Multi-NAS Support** - Manage multiple Mikrotik routers from single interface
+- **📊 Real-time Monitoring** - Live network performance, bandwidth utilization
+- **🔧 Remote Configuration** - Configure RADIUS settings, restart devices remotely
+- **📈 Analytics** - Network usage patterns, peak hours, capacity planning
+- **🚨 Alerting** - Automated alerts for network issues, high usage, device failures
+
+### 💰 **Professional Billing System**
+- **📄 Automated Invoicing** - Generate invoices automatically based on service plans
+- **💳 Payment Processing** - Multiple payment methods, online payment gateway integration
+- **📊 Revenue Analytics** - Monthly revenue reports, growth tracking, profit analysis
+- **⏰ Overdue Management** - Automated reminders, service suspension for non-payment
+- **📈 Business Intelligence** - Customer lifetime value, churn analysis, revenue forecasting
+
+---
+
+## 🌐 **ACCESS URLS**
+
+After installation, access your professional platform:
+
+| Service | URL | Credentials |
+|---------|-----|-------------|
+| **🔧 Admin Portal** | `http://YOUR_SERVER_IP:3000` | `admin@haroonnet.com` / `admin123` |
+| **👥 Customer Portal** | `http://YOUR_SERVER_IP:3001` | Customer credentials |
+| **📊 Grafana Monitoring** | `http://YOUR_SERVER_IP:3002` | `admin` / (generated password) |
+| **📈 Prometheus Metrics** | `http://YOUR_SERVER_IP:9090` | No authentication |
+| **🌸 Worker Dashboard** | `http://YOUR_SERVER_IP:5555` | No authentication |
+| **🔍 API Health** | `http://YOUR_SERVER_IP:4000/health` | API endpoints |
+
+---
+
+## 📡 **RADIUS SERVER CONFIGURATION**
+
+Your RADIUS server will be ready for Mikrotik configuration:
+
+### **RADIUS Settings:**
+- **Server IP**: `YOUR_SERVER_IP`
+- **Authentication Port**: `1812`
+- **Accounting Port**: `1813`
+- **CoA Port**: `3799`
+- **Shared Secret**: `haroonnet-coa-secret`
+
+### **Mikrotik Configuration:**
+```mikrotik
+/radius add service=login address=YOUR_SERVER_IP secret=haroonnet-coa-secret
+/radius add service=accounting address=YOUR_SERVER_IP secret=haroonnet-coa-secret
+/ip hotspot profile set default use-radius=yes
 ```
 
-## 🌐 Access URLs
+---
 
-After installation, access your platform:
+## 🏗️ **PROFESSIONAL ARCHITECTURE**
 
-- **Admin Portal**: `http://YOUR_SERVER_IP:3000`
-- **Customer Portal**: `http://YOUR_SERVER_IP:3001`
-- **API Documentation**: `http://YOUR_SERVER_IP:4000/health`
-- **Grafana Monitoring**: `http://YOUR_SERVER_IP:3002`
-- **Prometheus Metrics**: `http://YOUR_SERVER_IP:9090`
-- **Worker Dashboard**: `http://YOUR_SERVER_IP:5555`
+```
+                    ┌─────────────────────────────────────┐
+                    │     PROFESSIONAL WEB INTERFACES     │
+                    └─────────────────────────────────────┘
+                                       │
+        ┌──────────────────────────────┼──────────────────────────────┐
+        │                              │                              │
+┌───────▼───────┐           ┌──────────▼──────────┐           ┌──────▼──────┐
+│ Admin Portal  │           │   Customer Portal   │           │  Monitoring │
+│   :3000       │           │      :3001          │           │ Grafana     │
+│               │           │                     │           │   :3002     │
+│ • Customers   │           │ • Account Info      │           │             │
+│ • NAS Devices │           │ • Usage Tracking    │           │ • Analytics │
+│ • Billing     │           │ • Bill Payment      │           │ • Reports   │
+│ • Tickets     │           │ • Support Tickets   │           │ • Alerts    │
+│ • Analytics   │           │ • Service History   │           │ • Dashboards│
+└───────────────┘           └─────────────────────┘           └─────────────┘
+                                       │
+                    ┌─────────────────────────────────────┐
+                    │         API BACKEND :4000           │
+                    │                                     │
+                    │ • Customer Management APIs          │
+                    │ • NAS Device Control APIs           │
+                    │ • Billing & Payment APIs            │
+                    │ • Support Ticket APIs               │
+                    │ • Usage Analytics APIs              │
+                    │ • RADIUS Integration APIs           │
+                    └─────────────────────────────────────┘
+                                       │
+        ┌──────────────────────────────┼──────────────────────────────┐
+        │                              │                              │
+┌───────▼───────┐           ┌──────────▼──────────┐           ┌──────▼──────┐
+│   FreeRADIUS  │           │       MySQL         │           │    Redis    │
+│   :1812/1813  │           │       :3306         │           │    :6379    │
+│               │           │                     │           │             │
+│ • Auth Server │           │ • Customer Data     │           │ • Sessions  │
+│ • Accounting  │           │ • Billing Records   │           │ • Cache     │
+│ • CoA/DM      │           │ • Usage Statistics  │           │ • Queue     │
+│ • Mikrotik    │           │ • Support Tickets   │           │ • Tasks     │
+└───────────────┘           └─────────────────────┘           └─────────────┘
+```
 
-## 🔑 Default Credentials
+---
 
-- **Admin Portal**: `admin@haroonnet.com` / `admin123`
-- **Grafana**: `admin` / `admin123`
+## 📋 **PROFESSIONAL SERVICE MANAGEMENT**
 
-⚠️ **Change all default passwords after first login!**
+### **Customer Management:**
+- Add customers with complete profiles
+- Assign service packages and pricing
+- Suspend/activate accounts
+- Track usage and billing history
+- Manage customer support requests
 
-## 📡 RADIUS Configuration
+### **NAS Device Management:**
+- Add Mikrotik routers and other NAS devices
+- Configure RADIUS settings remotely
+- Monitor device status and performance
+- Restart devices and update configurations
+- View active sessions and connected users
 
-Configure your Mikrotik routers to use:
-- **Authentication**: `YOUR_SERVER_IP:1812`
-- **Accounting**: `YOUR_SERVER_IP:1813`
-- **CoA/DM**: `YOUR_SERVER_IP:3799`
-- **Shared Secret**: `testing123` (change in production)
+### **Service Package Management:**
+- Create custom service packages
+- Set speed limits (upload/download)
+- Configure data limits (limited/unlimited)
+- Set pricing and billing cycles
+- Manage package upgrades/downgrades
 
-## 🔧 Management Commands
+### **Billing & Payment Management:**
+- Automated invoice generation
+- Multiple payment method support
+- Overdue account management
+- Revenue tracking and analytics
+- Payment gateway integration
+
+### **Support Ticket System:**
+- Customer ticket submission
+- Priority level management
+- Status tracking and updates
+- SLA monitoring and alerts
+- Knowledge base integration
+
+---
+
+## 🔧 **MANAGEMENT COMMANDS**
 
 ```bash
-# Check service status
+# Check all services status
 docker-compose ps
 
-# View logs
+# View service logs
 docker-compose logs [service-name]
 
-# Restart services
-docker-compose restart
+# Restart specific service
+docker-compose restart [service-name]
 
-# Stop platform
-docker-compose down
+# Restart RADIUS server
+docker-compose restart freeradius
 
 # Update platform
 git pull origin main
 docker-compose build
 docker-compose up -d
+
+# Backup database
+docker-compose exec mysql mysqldump -u root -p haroonnet > backup.sql
+
+# Monitor real-time logs
+docker-compose logs -f [service-name]
 ```
-
-## 🏗️ Architecture
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Admin Portal  │    │ Customer Portal │    │   Monitoring    │
-│     :3000       │    │     :3001       │    │   Grafana :3002 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌─────────────────┐
-                    │   API Server    │
-                    │     :4000       │
-                    └─────────────────┘
-                                 │
-         ┌───────────────────────┼───────────────────────┐
-         │                       │                       │
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   FreeRADIUS    │    │     MySQL       │    │     Redis       │
-│   :1812/1813    │    │     :3306       │    │     :6379       │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌─────────────────┐
-                    │ Celery Workers  │
-                    │ (Background)    │
-                    └─────────────────┘
-```
-
-## 📊 Services
-
-| Service | Port | Description |
-|---------|------|-------------|
-| Admin UI | 3000 | Web-based admin interface |
-| Customer Portal | 3001 | Customer self-service portal |
-| API | 4000 | RESTful API backend |
-| Grafana | 3002 | Monitoring dashboards |
-| Prometheus | 9090 | Metrics collection |
-| Flower | 5555 | Worker task monitoring |
-| MySQL | 3306 | Primary database |
-| Redis | 6379 | Cache and sessions |
-| FreeRADIUS | 1812/1813 | Authentication server |
-
-## 🛡️ Security Features
-
-- 🔒 **Firewall Configuration** - UFW with minimal required ports
-- 🔐 **SSL Certificates** - Self-signed (replace with Let's Encrypt)
-- 🛡️ **JWT Authentication** - Secure API access
-- 👤 **User Roles** - Admin, operator, customer access levels
-- 🚫 **Rate Limiting** - API throttling protection
-- 📝 **Audit Logs** - All actions logged for compliance
-
-## 🔧 Customization
-
-Edit these files to customize your platform:
-- `config/` - Service configurations
-- `services/admin-ui/` - Admin interface customization
-- `services/customer-portal/` - Customer portal customization
-- `services/api/` - Backend API logic
-- `.env` - Environment variables
-
-## 📖 Documentation
-
-- [Fresh Ubuntu Installation](docs/fresh-ubuntu-installation.md)
-- [Mikrotik Configuration](docs/mikrotik-configuration.md)
-- [Installation Guide](docs/installation.md)
-
-## 🆘 Support
-
-- Create an issue in this repository
-- Check the logs: `docker-compose logs [service]`
-- Run diagnostics: `./scripts/run_tests.sh`
-
-## 📄 License
-
-This project is licensed under the MIT License.
 
 ---
 
-**Built with ❤️ for ISP operators worldwide**
+## 🎯 **GETTING STARTED**
+
+1. **🚀 Install**: Run the one-command installation
+2. **🌐 Access**: Open `http://YOUR_SERVER_IP:3000`
+3. **🔑 Login**: Use `admin@haroonnet.com` / `admin123`
+4. **⚙️ Configure**: Set up your company information
+5. **🌐 Add NAS**: Configure your Mikrotik devices
+6. **📦 Create Plans**: Set up your service packages
+7. **👥 Add Customers**: Start onboarding customers
+8. **💰 Start Billing**: Automated invoicing begins
+
+---
+
+## 🛡️ **SECURITY & COMPLIANCE**
+
+- 🔒 **SSL/TLS Encryption** - Secure web interfaces
+- 🛡️ **Firewall Configuration** - Minimal attack surface
+- 👤 **Role-based Access** - Admin, manager, customer roles
+- 📝 **Audit Logging** - Complete activity tracking
+- 🔐 **Secure Authentication** - JWT tokens, password hashing
+- 🚫 **Rate Limiting** - API protection against abuse
+
+---
+
+## 📞 **SUPPORT**
+
+- **Documentation**: Check the `docs/` directory
+- **Issues**: Create GitHub issues for bug reports
+- **Diagnostics**: Run `docker-compose logs [service]`
+- **Updates**: Regular updates via Git pull
+
+---
+
+## 📄 **LICENSE**
+
+MIT License - Free for commercial use
+
+---
+
+**🌟 Built for Professional ISP Operations Worldwide 🌟**
+
+*Complete ISP management platform with enterprise-grade features for small to medium ISP operators.*
