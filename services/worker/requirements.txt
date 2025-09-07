@@ -2,12 +2,12 @@
 
 # Core framework
 celery[redis]==5.3.4
-redis==5.0.1
+redis==4.6.0
 
 # Database
 SQLAlchemy==2.0.23
 PyMySQL==1.1.0
-cryptography==41.0.8
+cryptography==43.0.3
 
 # Configuration
 python-dotenv==1.0.0

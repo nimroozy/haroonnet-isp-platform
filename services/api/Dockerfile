@@ -3,14 +3,15 @@ FROM node:20-alpine
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies and NestJS CLI
 RUN apk add --no-cache python3 make g++
+RUN npm install -g @nestjs/cli
 
 # Copy package files
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --only=production && npm cache clean --force
 
 # Copy source code
 COPY . .
