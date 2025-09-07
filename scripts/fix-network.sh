@@ -33,15 +33,15 @@ if [[ $EUID -eq 0 ]]; then
     sed -i '/net.ipv6.conf.all.disable_ipv6/d' /etc/sysctl.conf
     sed -i '/net.ipv6.conf.default.disable_ipv6/d' /etc/sysctl.conf
     sed -i '/net.ipv6.conf.lo.disable_ipv6/d' /etc/sysctl.conf
-    
+
     # Add IPv6 disable configuration
     echo 'net.ipv6.conf.all.disable_ipv6 = 1' >> /etc/sysctl.conf
     echo 'net.ipv6.conf.default.disable_ipv6 = 1' >> /etc/sysctl.conf
     echo 'net.ipv6.conf.lo.disable_ipv6 = 1' >> /etc/sysctl.conf
-    
+
     # Apply immediately
     sysctl -p
-    
+
     # Disable IPv6 in GRUB
     if grep -q "ipv6.disable=1" /etc/default/grub; then
         print_status "INFO" "IPv6 already disabled in GRUB"

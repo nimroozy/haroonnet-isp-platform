@@ -97,7 +97,7 @@ if [[ $EUID -eq 0 ]]; then
     # Ensure SSH stays open before resetting firewall
     ufw allow 22/tcp
     sleep 2
-    
+
     ufw --force reset
     ufw default deny incoming
     ufw default allow outgoing
@@ -113,19 +113,19 @@ if [[ $EUID -eq 0 ]]; then
     ufw allow 3002/tcp  # Grafana
     ufw allow 9090/tcp  # Prometheus
     ufw allow 5555/tcp  # Flower
-    
+
     # Disable IPv6 in UFW
     sed -i 's/IPV6=yes/IPV6=no/' /etc/default/ufw
-    
+
     ufw --force enable
-    
+
     # Verify SSH is still allowed
     ufw status | grep -q "22/tcp" && echo "✅ SSH access confirmed"
 else
     # Ensure SSH stays open before resetting firewall
     sudo ufw allow 22/tcp
     sleep 2
-    
+
     sudo ufw --force reset
     sudo ufw default deny incoming
     sudo ufw default allow outgoing
@@ -141,12 +141,12 @@ else
     sudo ufw allow 3002/tcp  # Grafana
     sudo ufw allow 9090/tcp  # Prometheus
     sudo ufw allow 5555/tcp  # Flower
-    
+
     # Disable IPv6 in UFW
     sudo sed -i 's/IPV6=yes/IPV6=no/' /etc/default/ufw
-    
+
     sudo ufw --force enable
-    
+
     # Verify SSH is still allowed
     sudo ufw status | grep -q "22/tcp" && echo "✅ SSH access confirmed"
 fi
