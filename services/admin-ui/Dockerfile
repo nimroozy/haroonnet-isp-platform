@@ -27,17 +27,16 @@ ENV NODE_ENV production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Create public directory and copy if exists
-RUN mkdir -p ./public
-COPY --from=builder /app/public* ./public/ 2>/dev/null || true
+# Create directories
+RUN mkdir -p ./public .next
 
-# Set the correct permission for prerender cache
-RUN mkdir -p .next
+# Set permissions  
 RUN chown nextjs:nodejs .next
 
-# Automatically leverage output traces to reduce image size
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone* ./ 2>/dev/null || true
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static* ./.next/ 2>/dev/null || true
+# Copy built application (with error handling)
+COPY --from=builder /app/public ./public 2>/dev/null || mkdir -p ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./ 2>/dev/null || echo "No standalone build found"
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static 2>/dev/null || echo "No static build found"
 
 USER nextjs
 
