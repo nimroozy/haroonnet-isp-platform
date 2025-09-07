@@ -64,7 +64,7 @@ class TestAuthenticationAPI:
         """Test JWT token validation"""
         # Create a test token
         payload = {
-            'sub': self.test_user['id'],
+            'sub': str(self.test_user['id']),
             'email': self.test_user['email'],
             'roles': self.test_user['roles'],
             'exp': datetime.utcnow() + timedelta(hours=24)
@@ -75,7 +75,7 @@ class TestAuthenticationAPI:
         # Validate token
         decoded = jwt.decode(token, self.jwt_secret, algorithms=['HS256'])
 
-        assert decoded['sub'] == self.test_user['id']
+        assert int(decoded['sub']) == self.test_user['id']
         assert decoded['email'] == self.test_user['email']
         assert decoded['roles'] == self.test_user['roles']
 
@@ -83,7 +83,7 @@ class TestAuthenticationAPI:
         """Test expired token handling"""
         # Create an expired token
         payload = {
-            'sub': self.test_user['id'],
+            'sub': str(self.test_user['id']),
             'email': self.test_user['email'],
             'exp': datetime.utcnow() - timedelta(hours=1)  # Expired
         }
@@ -178,7 +178,7 @@ class TestAuthenticationAPI:
         """Mock login implementation"""
         if login_data['email'] == 'test@haroonnet.com' and login_data['password'] == 'test123':
             payload = {
-                'sub': self.test_user['id'],
+                'sub': str(self.test_user['id']),
                 'email': self.test_user['email'],
                 'roles': self.test_user['roles'],
                 'exp': datetime.utcnow() + timedelta(hours=24)
@@ -186,7 +186,7 @@ class TestAuthenticationAPI:
 
             access_token = jwt.encode(payload, self.jwt_secret, algorithm='HS256')
             refresh_token = jwt.encode(
-                {'sub': self.test_user['id'], 'type': 'refresh'},
+                {'sub': str(self.test_user['id']), 'type': 'refresh'},
                 self.jwt_secret,
                 algorithm='HS256'
             )
@@ -237,7 +237,7 @@ class TestAuthenticationAPI:
         if self._failed_attempts[email] >= 5:
             return {
                 'status': 'error',
-                'message': 'Too many failed attempts. Please try again later.'
+                'message': 'Too many failed attempts. Rate limit exceeded. Please try again later.'
             }
 
         if password != 'test123':
@@ -254,9 +254,13 @@ class TestAuthenticationAPI:
     def mock_create_session(self, user_id):
         """Mock session creation"""
         import uuid
+        session_id = str(uuid.uuid4())
+        if not hasattr(self, '_active_sessions'):
+            self._active_sessions = []
+        self._active_sessions.append(session_id)
         return {
             'user_id': user_id,
-            'session_id': str(uuid.uuid4()),
+            'session_id': session_id,
             'created_at': datetime.utcnow().isoformat()
         }
 
@@ -429,19 +433,19 @@ class TestUserManagement:
 
         # Email validation
         if 'email' not in user_data or '@' not in user_data['email']:
-            errors.append('Invalid email format')
+            errors.append('email')
 
         # Required fields
         required_fields = ['firstName', 'lastName']
         for field in required_fields:
             if field not in user_data or not user_data[field]:
-                errors.append(f'{field} is required')
+                errors.append(field)
 
         # Password strength (if provided)
         if 'password' in user_data:
             password = user_data['password']
             if len(password) < 8:
-                errors.append('Password must be at least 8 characters long')
+                errors.append('password')
 
         return {
             'valid': len(errors) == 0,
