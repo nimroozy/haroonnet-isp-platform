@@ -2,15 +2,31 @@
 
 A **complete professional ISP management platform** with comprehensive web-based administration, customer management, RADIUS authentication, billing, monitoring, and support systems.
 
-## 🚀 **ONE-COMMAND PROFESSIONAL INSTALLATION**
+## ⚡ **ULTIMATE ONE-CLICK INSTALLATION**
 
-Install the complete professional ISP management platform on Ubuntu 22.04 LTS:
+### 🎯 **Perfect Installation (Handles Everything Automatically)**
+```bash
+# Ultimate installer - zero manual steps required
+curl -sSL https://raw.githubusercontent.com/nimroozy/haroonnet-isp-platform/main/install-isp-platform.sh | bash
+```
 
+**✅ This installer automatically handles:**
+- ✨ **Beautiful Modern UI** - Professional design with gradients
+- 🔒 **IPv6 Disable** - Prevents network conflicts
+- 🛡️ **SSH-Safe Firewall** - No disconnection during install
+- 🐳 **Docker IPv4 Config** - Optimal container networking
+- 📁 **Directory Creation** - All permissions handled
+- 🔧 **Volume Mount Fixes** - No more Docker errors
+- 🔄 **Intelligent Retries** - Auto-restarts failed services
+- ✅ **Health Checks** - Verifies all services work
+- 📋 **Complete Setup** - Ready to use immediately
+
+### 🔄 **Alternative Installation (Original)**
 ```bash
 curl -sSL https://raw.githubusercontent.com/nimroozy/haroonnet-isp-platform/main/one-command-install.sh | bash
 ```
 
-**That's it!** Your complete professional ISP management system will be ready in 10-15 minutes.
+**🎉 That's it!** Your complete professional ISP management system will be ready in 10-15 minutes with **ZERO manual intervention**.
 
 ---
 

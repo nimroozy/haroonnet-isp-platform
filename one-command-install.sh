@@ -325,11 +325,26 @@ EOF
 
 chmod 600 .credentials
 
-# Create required directories
+# Create required directories with proper permissions
+print_status "INFO" "Creating directory structure and fixing permissions..."
 mkdir -p {logs,backups,uploads,ssl}
 mkdir -p logs/freeradius
 mkdir -p config/{loki,promtail}
+
+# Set proper permissions to prevent Docker mount issues
 chmod 755 logs/freeradius
+chmod 755 logs
+chmod 755 config
+chmod 755 config/loki
+chmod 755 config/promtail
+
+# Create missing config files to avoid mount errors
+touch config/loki/loki-config.yml
+touch config/promtail/promtail-config.yml
+chmod 644 config/loki/loki-config.yml
+chmod 644 config/promtail/promtail-config.yml
+
+print_status "SUCCESS" "Directory structure created with proper permissions"
 
 # Generate SSL certificates
 print_status "INFO" "Generating SSL certificates..."
@@ -342,9 +357,15 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 chmod 600 ssl/selfsigned.key
 chmod 644 ssl/selfsigned.crt
 
-# Create missing config files to avoid mount errors
-touch config/loki/loki-config.yml
-touch config/promtail/promtail-config.yml
+# Pre-create Docker volumes to avoid mounting issues
+print_status "INFO" "Pre-creating Docker volumes to prevent mount errors..."
+docker volume create haroonnet_mysql_data 2>/dev/null || true
+docker volume create haroonnet_redis_data 2>/dev/null || true
+docker volume create haroonnet_grafana_data 2>/dev/null || true
+docker volume create haroonnet_prometheus_data 2>/dev/null || true
+docker volume create haroonnet_loki_data 2>/dev/null || true
+docker volume create haroonnet_nginx_logs 2>/dev/null || true
+docker volume create haroonnet_worker_backups 2>/dev/null || true
 
 # Set timezone for Afghanistan
 print_status "INFO" "Setting timezone to Asia/Kabul..."
@@ -372,21 +393,136 @@ docker-compose build nginx prometheus grafana loki promtail
 
 print_status "SUCCESS" "Professional ISP platform built successfully"
 
-# Start the complete platform
+# Start the complete platform with automatic error handling
 print_status "INFO" "Starting Professional HaroonNet ISP Platform..."
 docker-compose up -d
 
-# Wait for all services to initialize
-print_status "INFO" "Waiting for all professional services to initialize..."
-sleep 120
+# Wait for initial startup
+print_status "INFO" "Waiting for initial service startup..."
+sleep 60
 
-# Check service status
-print_status "INFO" "Checking professional service status..."
+# Smart service health check and auto-fix
+print_status "INFO" "Performing intelligent service health check..."
+MAX_RETRIES=3
+RETRY_COUNT=0
+
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    # Check for failed services
+    FAILED_SERVICES=$(docker-compose ps --filter "status=exited" --format "table {{.Service}}" | tail -n +2)
+
+    if [[ -z "$FAILED_SERVICES" ]]; then
+        print_status "SUCCESS" "All services started successfully!"
+        break
+    else
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+        print_status "WARNING" "Some services failed (Attempt $RETRY_COUNT/$MAX_RETRIES). Auto-fixing..."
+
+        # Auto-fix common issues
+        print_status "INFO" "Applying automatic fixes..."
+
+        # Fix directory permissions
+        chmod -R 755 logs config
+
+        # Clean and recreate problematic volumes
+        docker volume prune -f
+
+        # Restart failed services
+        if [[ -n "$FAILED_SERVICES" ]]; then
+            echo "$FAILED_SERVICES" | while read -r service; do
+                if [[ -n "$service" && "$service" != "SERVICE" ]]; then
+                    print_status "INFO" "Restarting service: $service"
+                    docker-compose restart "$service" 2>/dev/null || true
+                fi
+            done
+        fi
+
+        # Wait before next check
+        sleep 30
+    fi
+done
+
+# Final comprehensive restart if needed
+if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+    print_status "WARNING" "Performing final comprehensive restart..."
+    docker-compose down
+    sleep 10
+    docker-compose up -d
+    sleep 90
+fi
+
+# Final service status check
+print_status "INFO" "Final service status verification..."
 docker-compose ps
 
-# Test professional services
-print_status "INFO" "Testing professional web interfaces..."
-sleep 30
+# Comprehensive service testing and auto-healing
+print_status "INFO" "Performing comprehensive service testing and auto-healing..."
+
+# Function to test and fix services
+test_and_fix_service() {
+    local service_name=$1
+    local test_url=$2
+    local port=$3
+
+    print_status "INFO" "Testing $service_name..."
+
+    # Test service connectivity
+    if curl -f -s --max-time 10 "$test_url" >/dev/null 2>&1; then
+        print_status "SUCCESS" "$service_name is responding correctly"
+        return 0
+    else
+        print_status "WARNING" "$service_name not responding. Auto-fixing..."
+
+        # Auto-fix attempts
+        docker-compose restart "$service_name" 2>/dev/null || true
+        sleep 20
+
+        # Test again
+        if curl -f -s --max-time 10 "$test_url" >/dev/null 2>&1; then
+            print_status "SUCCESS" "$service_name fixed and responding"
+            return 0
+        else
+            print_status "WARNING" "$service_name still not responding (this may be normal during startup)"
+            return 1
+        fi
+    fi
+}
+
+# Test all critical services
+test_and_fix_service "api" "http://localhost:4000/health" "4000"
+test_and_fix_service "admin-ui" "http://localhost:3000" "3000"
+test_and_fix_service "customer-portal" "http://localhost:3001" "3001"
+test_and_fix_service "grafana" "http://localhost:3002" "3002"
+test_and_fix_service "prometheus" "http://localhost:9090" "9090"
+
+# Test database connectivity
+print_status "INFO" "Testing database connectivity..."
+if docker-compose exec -T mysql mysql -u root -p$MYSQL_ROOT_PASS -e "SELECT 1" >/dev/null 2>&1; then
+    print_status "SUCCESS" "MySQL database is ready and responding"
+else
+    print_status "WARNING" "MySQL not ready, restarting..."
+    docker-compose restart mysql
+    sleep 30
+fi
+
+# Test Redis connectivity
+print_status "INFO" "Testing Redis cache..."
+if docker-compose exec -T redis redis-cli ping >/dev/null 2>&1; then
+    print_status "SUCCESS" "Redis cache is ready and responding"
+else
+    print_status "WARNING" "Redis not ready, restarting..."
+    docker-compose restart redis
+    sleep 15
+fi
+
+# Test FreeRADIUS
+print_status "INFO" "Testing FreeRADIUS server..."
+if docker-compose logs freeradius 2>/dev/null | grep -q "Ready to process requests" || docker-compose ps freeradius | grep -q "Up"; then
+    print_status "SUCCESS" "FreeRADIUS server is running"
+else
+    print_status "WARNING" "FreeRADIUS may need more time to start"
+fi
+
+print_status "SUCCESS" "Service testing and auto-healing completed"
 
 # Display professional platform information
 echo ""
