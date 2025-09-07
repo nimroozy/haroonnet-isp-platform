@@ -172,8 +172,10 @@ fi
 # Create required directories
 echo "📁 Creating required directories..."
 mkdir -p {logs,backups,uploads}
+mkdir -p logs/freeradius
 mkdir -p config/{nginx/conf.d,prometheus,grafana/{provisioning,dashboards},loki,promtail}
 mkdir -p database/backups
+chmod 755 logs/freeradius
 
 # Set proper permissions
 echo "🔑 Setting permissions..."

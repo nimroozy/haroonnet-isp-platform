@@ -327,7 +327,9 @@ chmod 600 .credentials
 
 # Create required directories
 mkdir -p {logs,backups,uploads,ssl}
+mkdir -p logs/freeradius
 mkdir -p config/{loki,promtail}
+chmod 755 logs/freeradius
 
 # Generate SSL certificates
 print_status "INFO" "Generating SSL certificates..."

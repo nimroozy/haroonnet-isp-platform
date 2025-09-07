@@ -1,4 +1,4 @@
-version: '3.8'
+# Docker Compose for HaroonNet ISP Platform
 
 services:
   # MySQL Database
@@ -48,7 +48,7 @@ services:
       - "3799:3799/udp"  # CoA/DM
     volumes:
       - ./config/freeradius:/etc/freeradius/3.0
-      - ./logs/freeradius:/var/log/freeradius
+      - freeradius_logs:/var/log/freeradius
     environment:
       - DB_HOST=mysql
       - DB_NAME=${RADIUS_DB_NAME:-radius}
@@ -297,7 +297,7 @@ services:
     volumes:
       - ./config/promtail/promtail-config.yml:/etc/promtail/config.yml
       - /var/log:/var/log:ro
-      - ./logs/freeradius:/var/log/freeradius:ro
+      - freeradius_logs:/var/log/freeradius:ro
       - nginx_logs:/var/log/nginx:ro
     command: -config.file=/etc/promtail/config.yml
     depends_on:
@@ -308,7 +308,7 @@ services:
 volumes:
   mysql_data:
   redis_data:
-# Removed freeradius_logs volume - now using local directory
+  freeradius_logs:
   nginx_logs:
   prometheus_data:
   grafana_data:
