@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerModuleOptions } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { BullModule } from '@nestjs/bull';
 import { JwtModule } from '@nestjs/jwt';
@@ -19,7 +19,6 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { TicketsModule } from './modules/tickets/tickets.module';
 import { NocModule } from './modules/noc/noc.module';
 import { RadiusModule } from './modules/radius/radius.module';
-import { ReportsModule } from './modules/reports/reports.module';
 import { SystemModule } from './modules/system/system.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 
@@ -118,10 +117,12 @@ import redisConfig from './config/redis.config';
     // Rate limiting
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        ttl: 60, // 1 minute
-        limit: configService.get('NODE_ENV') === 'production' ? 100 : 1000,
-      }),
+      useFactory: (configService: ConfigService): ThrottlerModuleOptions => [
+        {
+          ttl: 60, // 1 minute
+          limit: configService.get('NODE_ENV') === 'production' ? 100 : 1000,
+        },
+      ],
       inject: [ConfigService],
     }),
 
@@ -155,7 +156,6 @@ import redisConfig from './config/redis.config';
     TicketsModule,
     NocModule,
     RadiusModule,
-    ReportsModule,
     SystemModule,
     NotificationsModule,
   ],
