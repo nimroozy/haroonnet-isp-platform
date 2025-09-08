@@ -6,7 +6,6 @@ export default registerAs('redis', () => ({
   password: process.env.REDIS_PASSWORD || '',
   db: parseInt(process.env.REDIS_DB, 10) || 0,
   ttl: parseInt(process.env.REDIS_TTL, 10) || 3600,
-  maxRetriesPerRequest: 3,
   retryDelayOnFailover: 100,
   enableReadyCheck: true,
   maxRetriesPerRequest: 3,
