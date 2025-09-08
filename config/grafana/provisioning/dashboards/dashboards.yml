@@ -1,0 +1,16 @@
+# HaroonNet ISP Platform - Grafana Dashboard Provisioning
+
+apiVersion: 1
+
+providers:
+  # ISP Platform Dashboards
+  - name: 'haroonnet-dashboards'
+    orgId: 1
+    folder: 'HaroonNet ISP'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: true
