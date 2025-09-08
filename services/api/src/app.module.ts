@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
@@ -21,7 +21,8 @@ import redisConfig from './config/redis.config';
       load: [databaseConfig, authConfig, redisConfig],
     }),
     TypeOrmModule.forRootAsync({
-      useFactory: (configService: any) => ({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
         type: 'mysql',
         host: configService.get('database.host'),
         port: configService.get('database.port'),
@@ -31,7 +32,7 @@ import redisConfig from './config/redis.config';
         autoLoadEntities: true,
         synchronize: process.env.NODE_ENV === 'development',
       }),
-      inject: ['ConfigService'],
+      inject: [ConfigService],
     }),
     ThrottlerModule.forRoot([{
       ttl: 60,
